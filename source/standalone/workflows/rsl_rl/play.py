@@ -528,6 +528,15 @@ def main():
                 curr_min_max = loaded_env_cfg["scene"]["terrain"]["terrain_generator"][
                     "sub_terrains"
                 ]["box"]["box_height_range"]
+            elif (
+                "stairs"
+                in loaded_env_cfg["scene"]["terrain"]["terrain_generator"][
+                    "sub_terrains"
+                ]
+            ):
+                curr_min_max = loaded_env_cfg["scene"]["terrain"]["terrain_generator"][
+                    "sub_terrains"
+                ]["stairs"]["step_height_range"]
             else:
                 raise ValueError("Unknown terrain type to calculate real curriculum values.")
             eval_episode_metrics["real_curriculum_state"] = (
