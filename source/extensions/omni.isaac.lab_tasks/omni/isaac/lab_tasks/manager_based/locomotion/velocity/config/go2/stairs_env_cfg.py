@@ -26,12 +26,14 @@ class UnitreeGo2StairsEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
         super().__post_init__()
         
         self.terrain_type = "stairs"
+        parameters.set_curriculum(self, enable=False)
         parameters.set_terrain(self)
         parameters.set_rewards_simple(self)
         parameters.set_stairs_env_cfg_cmds(self)
         parameters.set_stairs_env_cfg_reset_base(self)
         parameters.add_relative_position_on_stairs_observation(self)
         parameters.add_stair_parameters_observation(self)
+        parameters.set_curriculum(self, enable=False)
 
 
 @configclass
@@ -42,6 +44,16 @@ class UnitreeGo2StairsEnvCfgSimpleReward_PLAY(UnitreeGo2StairsEnvCfgSimpleReward
 
         parameters.set_play_settings_flat(self)
         parameters.set_play_settings_rough(self)
+
+
+@configclass
+class UnitreeGo2StairsEnvCfgSimpleRewardCurriculum(UnitreeGo2StairsEnvCfgSimpleReward):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        parameters.set_curriculum(self, enable=True)
+
 
 #######################################################################
 # Stairs complex reward
@@ -54,6 +66,7 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
         super().__post_init__()
 
         parameters.set_rewards_complex(self)
+        parameters.set_curriculum(self, enable=False)
 
 
 @configclass
@@ -61,9 +74,33 @@ class UnitreeGo2StairsEnvCfgComplexReward_PLAY(UnitreeGo2StairsEnvCfgComplexRewa
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
-        
+
         parameters.set_play_settings_flat(self)
         parameters.set_play_settings_rough(self)
+
+
+@configclass
+class UnitreeGo2StairsEnvCfgComplexRewardCurriculum(
+    UnitreeGo2StairsEnvCfgComplexReward
+):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        parameters.set_curriculum(self, enable=True)
+
+
+@configclass
+class UnitreeGo2StairsEnvCfgComplexRewardCurriculum_PLAY(
+    UnitreeGo2StairsEnvCfgComplexRewardCurriculum
+):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        parameters.set_play_settings_flat(self)
+        parameters.set_play_settings_rough(self)
+
 
 #######################################################################
 # Stairs AMP
@@ -80,9 +117,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_stairs_env_cfg_reset_base(self)
         parameters.add_relative_position_on_stairs_observation(self)
         parameters.add_stair_parameters_observation(self)
-
+        parameters.set_curriculum(self, enable=True)
 
         parameters.set_velocity_rewards_amp(self)
+
+        self.events.reference_state_initialization = None
 
         self.scene.num_envs = 2 * 4096  # 5480
 

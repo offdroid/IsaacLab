@@ -7,6 +7,8 @@ import omni.isaac.lab_tasks.manager_based.locomotion.velocity.mdp as mdp
 from omni.isaac.lab.managers import EventTermCfg as EventTerm
 from omni.isaac.lab.managers import SceneEntityCfg
 
+import omni.isaac.lab_tasks.manager_based.locomotion.velocity.mdp as mdp
+from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm
 from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
 from omni.isaac.lab.managers import RewardTermCfg as RewTerm
 from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
@@ -41,6 +43,24 @@ def set_play_settings_rough(cfg):
         cfg.scene.terrain.terrain_generator.curriculum = False
 
 
+def set_curriculum(cfg, enable: bool):
+    if not enable:
+        cfg.curriculum.terrain_levels = None
+        cfg.scene.terrain.terrain_generator.curriculum = False
+    else:
+        cfg.scene.terrain.terrain_generator.curriculum = True
+        assert cfg.terrain_type == "stairs"
+        cfg.curriculum.terrain_levels = CurrTerm(
+            func=mdp.terrain_levels_vel,
+            params={"custom_required_distance_for_move_up": 3},
+        )
+        assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+            0.0,
+            0.16,
+        )
+
+
 def set_terrain(cfg):
     if cfg.terrain_type == "flat":
         # change terrain to flat
@@ -68,9 +88,12 @@ def set_terrain(cfg):
         )
     elif cfg.terrain_type == "stairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
-        cfg.scene.height_scanner = None
-        cfg.observations.policy.height_scan = None
+        cfg.scene.terrain.max_init_terrain_level = 0
         cfg.curriculum.terrain_levels = None
+
+        cfg.scene.height_scanner = None
+        cfg.rewards.base_height = None
+        cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "box":
         cfg.scene.terrain.terrain_generator = BOX_TERRAINS_CFG
         cfg.scene.height_scanner = None
@@ -86,7 +109,8 @@ def set_rewards_simple(cfg):
     # disable rewards
     for field in fields(cfg.rewards):
         reward_obj = getattr(cfg.rewards, field.name)
-        reward_obj.weight = 0.0
+        if reward_obj is not None:
+            reward_obj.weight = 0.0
 
     # set task reward: from AMP for hardware baseline
     # NOTE AMP for Hardware has std=1. Can be activated by commenting out the two following lines
@@ -158,23 +182,25 @@ def set_pose2d_rewards_amp(cfg):
 
 
 def set_rewards_complex(cfg):
-    cfg.rewards.lin_vel_z_l2.weight = -2.0
-    cfg.rewards.ang_vel_xy_l2.weight = -0.05
-    cfg.rewards.dof_torques_l2.weight = -0.0002
-    cfg.rewards.dof_acc_l2.weight = -2.5e-7  # do not use for ResRL
+    cfg.rewards.lin_vel_z_l2.weight = -2.0 / 2
+    cfg.rewards.ang_vel_xy_l2.weight = -0.05 / 2
+    cfg.rewards.dof_torques_l2.weight = -0.0002  # Worse without
+    cfg.rewards.dof_acc_l2.weight = -1e-7  # do not use for ResRL
     cfg.rewards.action_rate_l2.weight = -0.01
-    cfg.rewards.feet_air_time.weight = (
-        10  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
-    )
+    cfg.rewards.feet_air_time.weight = 1.0  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
     cfg.rewards.undesired_contacts_thigh.weight = -1.0
     cfg.rewards.undesired_contacts_calf.weight = -1.0
-    cfg.rewards.contact_forces.weight = -1.0
+    cfg.rewards.contact_forces.weight = -0.25
     cfg.rewards.flat_orientation_l2.weight = -0.01
-    cfg.rewards.joint_pos_limits.weight = -10.0 # do not use for ResRL
-    cfg.rewards.torque_limits.weight = -1.0e-5
+    cfg.rewards.joint_pos_limits.weight = -10.0  # do not use for ResRL
+    cfg.rewards.torque_limits.weight = -1.5e-5
     cfg.rewards.joint_deviation_l1.weight = (
         -0.75
     )  # consider reducing this in case performance on task reward is bad
+    cfg.rewards.foot_clearance.weight = -0.0
+    cfg.rewards.base_height = None
+    # Do not use the height scan for policy, only for getting the ground height
+    cfg.observations.policy.height_scan = None
 
 
 def set_stairs_env_cfg_cmds(cfg):
@@ -189,11 +215,11 @@ def set_stairs_env_cfg_cmds(cfg):
         debug_vis=cfg.commands.base_velocity.debug_vis,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-0.1, 0.1),
-            lin_vel_y=(-0.5, 1.0),
+            lin_vel_y=(0.2, 0.5),
             ang_vel_z=(0, 0),
             heading=(
-                math.pi / 2 - math.radians(20),
-                math.pi / 2 + math.radians(20),
+                math.pi / 2,
+                math.pi / 2,
             ),  # global heading "up the stairs" is in y direction, which is math.pi/2
         ),
     )
@@ -271,10 +297,11 @@ def set_box_env_cfg_cmds(cfg):
 
 def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
-                "x": (-0.5, 0.5),
-                "y": (-0.1, 0.1),
-                "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
-            }
+        "x": (-0.5, 0.5),
+        "y": (-0.1, 0.1),
+        "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
+    }
+
 
 def set_box_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {

@@ -397,6 +397,55 @@ class Global3DUniformVelocityCommand(UniformVelocityCommand):
             base_pos_w, vel_arrow_quat, vel_arrow_scale
         )
 
+
+    def _update_metrics(self):
+        # NOTE I think those metrics are only correct if episodes do not end prematurely, and if command time is constant
+        # time for which the command was executed
+        max_command_time = self.cfg.resampling_time_range[1]
+        max_command_step = 1 # max_command_time / self._env.step_dt
+        # logs data
+
+        # determine error_vel_xy depending on if command is in world coordinates or not
+        # NOTE The check for "self.command_in_world_coordinates" is kept to reuse this function in inheriting classes. This class itself should always use the body frame.
+        # NOTE I could also use self.command here, but this requires additional computation
+        if self.command_in_world_coordinates:
+            self.metrics["error_vel_xy"] += (
+                torch.norm(self.vel_command_b[:, :2] - self.robot.data.root_lin_vel_w[:, :2], dim=-1) / max_command_step
+            )
+            self.metrics["error_vel_yaw"] += (
+                torch.abs(self.vel_command_b[:, 3] - self.robot.data.root_ang_vel_b[:, 2]) / max_command_step
+            )
+        else:
+            self.metrics["error_vel_xy"] += (
+                torch.norm(self.vel_command_b[:, :2] - self.robot.data.root_lin_vel_b[:, :2], dim=-1) / max_command_step
+            )
+            self.metrics["error_vel_yaw"] += (
+                torch.abs(self.vel_command_b[:, 3] - self.robot.data.root_ang_vel_b[:, 2]) / max_command_step
+            )
+
+        # oli's metrics
+        power = torch.sum(torch.abs(self.robot.data.joint_vel * self.robot.data.applied_torque), dim=-1)
+        speed = torch.norm(self.robot.data.root_lin_vel_b[:, :2], dim=-1)
+
+        self.metrics["mean_power"] += power / max_command_step
+        mechanical_cot = (power / (9.81 * speed * self.mass + 1e-6)) / max_command_step
+        # NOTE there is a bug that the metrics get computed also upon first reset. However, the speed is zero at that time. This here is just a workaround; should be fixed in the future.
+        mechanical_cot[mechanical_cot > 100] = 0.0
+        self.metrics["mean_mechanical_cot"] += mechanical_cot / max_command_step
+
+        self.metrics["mean_vel_x"] += self.robot.data.root_lin_vel_b[:, 0] / max_command_step
+        self.metrics["mean_vel_y"] += self.robot.data.root_lin_vel_b[:, 1] / max_command_step
+        self.metrics["mean_vel_x_w"] += self.robot.data.root_lin_vel_w[:, 0] / max_command_step
+        self.metrics["mean_vel_y_w"] += self.robot.data.root_lin_vel_w[:, 1] / max_command_step
+        self.metrics["mean_speed"] += speed / max_command_step
+        self.metrics["mean_yaw"] += self.robot.data.root_ang_vel_b[:, 2] / max_command_step
+        self.metrics["target_velocity_x"] += self.vel_command_b[:, 0] / max_command_step
+        self.metrics["target_velocity_y"] += self.vel_command_b[:, 1] / max_command_step
+        self.metrics["target_speed"] += torch.norm(self.vel_command_b[:, :3], dim=-1) / max_command_step
+        self.metrics["target_yaw"] += self.vel_command_b[:, 3] / max_command_step
+        self.metrics["heading_target"] += self.heading_target / max_command_step
+        self.metrics["heading_error"] += torch.abs(math_utils.wrap_to_pi(self.heading_target[:] - self.robot.data.heading_w[:])) / max_command_step
+
     """
     Internal helpers.
     """

@@ -315,7 +315,7 @@ class RewardsCfg:
         func=mdp.track_lin_vel_xy_exp, weight=0.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
     )
     track_ang_vel_z_exp = RewTerm(
-        func=mdp.track_ang_vel_z_exp, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_ang_vel_z_world_exp_3d, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
     # -- penalties
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.0)
@@ -365,6 +365,23 @@ class RewardsCfg:
     torque_limits = RewTerm(
         func=applied_torque_limits,
         weight=-0.0,
+    )
+
+    foot_clearance = RewTerm(
+        func=mdp.foot_clearance_reward,
+        weight=0.0,
+        params={
+            "target_height": -0.22,
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
+        },
+    )
+    base_height = RewTerm(
+        func=mdp.base_height_l2,
+        weight=0.0,
+        params={
+            "sensor_cfg": SceneEntityCfg("height_scanner"),
+            "target_height": 0.3,
+        },
     )
 
     # residual_action_l2 = RewTerm(

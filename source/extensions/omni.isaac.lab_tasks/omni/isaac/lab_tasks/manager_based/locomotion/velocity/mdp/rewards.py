@@ -103,3 +103,62 @@ def track_ang_vel_z_world_exp(
     asset = env.scene[asset_cfg.name]
     ang_vel_error = torch.square(env.command_manager.get_command(command_name)[:, 2] - asset.data.root_ang_vel_w[:, 2])
     return torch.exp(-ang_vel_error / std**2)
+
+
+def track_ang_vel_z_world_exp_3d(
+    env, command_name: str, std: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Reward tracking of angular velocity commands (yaw) in world frame using exponential kernel."""
+    # extract the used quantities (to enable type-hinting)
+    asset = env.scene[asset_cfg.name]
+    ang_vel_error = torch.square(env.command_manager.get_command(command_name)[:, 3] - asset.data.root_ang_vel_w[:, 2])
+    return torch.exp(-ang_vel_error / std**2)
+
+
+def foot_clearance_reward_flat(
+    env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg, target_height: float, std: float, tanh_mult: float
+) -> torch.Tensor:
+    """Reward the swinging feet for clearing a specified height off the ground"""
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    foot_z_target_error = torch.square(asset.data.body_pos_w[:, asset_cfg.body_ids, 2] - target_height)
+    foot_velocity_tanh = torch.tanh(tanh_mult * torch.norm(asset.data.body_lin_vel_w[:, asset_cfg.body_ids, :2], dim=2))
+    reward = foot_z_target_error * foot_velocity_tanh
+    return torch.exp(-torch.sum(reward, dim=1) / std)
+
+def foot_clearance_reward(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"), target_height: float = -0.22):
+    """
+    Reward the swinging feet for clearing a specified height off the ground.
+
+    Code adapted from SLR paper.
+    """
+    asset = env.scene[asset_cfg.name]
+    rigid_body_states = asset.data.body_state_w
+    base_quat = asset.data.root_quat_w
+    root_states = asset.data.root_state_w
+
+    num_envs = asset.num_instances
+
+    feet_names = ["FL_foot", "FR_foot", "RL_foot", "RR_foot"]
+    feet_indices = torch.zeros(len(feet_names), dtype=torch.long, device=asset.device, requires_grad=False)
+    for i in range(len(feet_names)):
+        feet_indices[i] = asset.find_bodies(feet_names[i])[0][0]
+    feet_indices = asset_cfg.body_ids
+
+    feet_pos = rigid_body_states[:, feet_indices, 0:3]
+    feet_vel = rigid_body_states[:, feet_indices, 7:10]
+
+    cur_footpos_translated = feet_pos - root_states[:, 0:3].unsqueeze(1)
+    footpos_in_body_frame = torch.zeros(num_envs, len(feet_indices), 3, device=asset.device)
+    cur_footvel_translated = feet_vel - root_states[:, 7:10].unsqueeze(1)
+    footvel_in_body_frame = torch.zeros(num_envs, len(feet_indices), 3, device=asset.device)
+    for i in range(len(feet_indices)):
+        footpos_in_body_frame[:, i, :] = quat_rotate_inverse(base_quat, cur_footpos_translated[:, i, :])
+        footvel_in_body_frame[:, i, :] = quat_rotate_inverse(base_quat, cur_footvel_translated[:, i, :])
+
+    height_error = torch.square(footpos_in_body_frame[:, :, 2] - target_height).view(num_envs, -1)
+    foot_leteral_vel = torch.sqrt(torch.sum(torch.square(footvel_in_body_frame[:, :, :2]), dim=2)).view(num_envs, -1)
+
+    clearance_reward = height_error * foot_leteral_vel
+
+    return torch.sum(clearance_reward, dim=1)
