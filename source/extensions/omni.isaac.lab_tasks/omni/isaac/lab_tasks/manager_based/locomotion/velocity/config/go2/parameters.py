@@ -45,10 +45,18 @@ def set_play_settings_rough(cfg):
 
 def set_curriculum(cfg, enable: bool):
     if not enable:
-        cfg.curriculum.terrain_levels = None
         cfg.scene.terrain.terrain_generator.curriculum = False
+        cfg.curriculum = None
+        cfg.scene.terrain.max_init_terrain_level = None
+    
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+            0.13,
+            0.16,
+        )
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = None
     else:
         cfg.scene.terrain.terrain_generator.curriculum = True
+        cfg.scene.terrain.max_init_terrain_level = 0
         assert cfg.terrain_type == "stairs"
         cfg.curriculum.terrain_levels = CurrTerm(
             func=mdp.terrain_levels_vel,
@@ -59,6 +67,7 @@ def set_curriculum(cfg, enable: bool):
             0.0,
             0.16,
         )
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
 
 def set_terrain(cfg):
@@ -88,12 +97,11 @@ def set_terrain(cfg):
         )
     elif cfg.terrain_type == "stairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
-        cfg.scene.terrain.max_init_terrain_level = 0
         cfg.curriculum.terrain_levels = None
 
         cfg.scene.height_scanner = None
-        cfg.rewards.base_height = None
         cfg.observations.policy.height_scan = None
+        cfg.rewards.base_height = None
     elif cfg.terrain_type == "box":
         cfg.scene.terrain.terrain_generator = BOX_TERRAINS_CFG
         cfg.scene.height_scanner = None
@@ -338,6 +346,7 @@ def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwa
             "device": cfg.sim.device,
             "time_between_frames": cfg.decimation * cfg.sim.dt,
             "motion_files": cfg.amp_motion_files,
+            "reference_states": ["joints", "base"],
     }
     params.update(kwargs)
 

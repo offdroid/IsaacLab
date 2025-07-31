@@ -194,6 +194,23 @@ runs_box = {
     ],
 }
 
+runs_stairs = {
+    plot_DEFINITIONS.ExperimentNames.video_depth_cam: [
+        "logs/rsl_rl/unitree_go2_AMPStairs/2025-07-25_17-14-21_stairs_first_try_curr_SEED_1/",
+        "logs/rsl_rl/unitree_go2_AMPStairs/2025-07-27_23-21-03_stairs_first_try_curr_v2_SEED_2/",
+    ],
+    plot_DEFINITIONS.ExperimentNames.drl_simple_reward: [
+        "logs/rsl_rl/unitree_go2_Stairs/2025-07-27_21-55-43-paper_simple_curr_v2_SEED_1/",
+        "logs/rsl_rl/unitree_go2_Stairs/2025-07-27_21-55-43-paper_simple_curr_v2_SEED_2/",
+        "logs/rsl_rl/unitree_go2_Stairs/2025-07-27_21-55-43-paper_simple_curr_v2_SEED_3/",
+    ],
+    plot_DEFINITIONS.ExperimentNames.drl_complex_reward: [
+        "logs/rsl_rl/unitree_go2_Stairs/2025-07-27_17-01-20-paper_paper_curr_tunedv2_SEED_1/",
+        "logs/rsl_rl/unitree_go2_Stairs/2025-07-27_17-01-20-paper_paper_curr_tunedv2_SEED_2/",
+        "logs/rsl_rl/unitree_go2_Stairs/2025-07-27_17-01-20-paper_paper_curr_tunedv2_SEED_3/",
+    ],
+}
+
 runs_flat = {
     plot_DEFINITIONS.ExperimentNames.manual_trajectory: [
         "logs/rsl_rl/unitree_go2_AMPflat/2025-05-16_21-23-07_manuallyGenerated_SEED_1",
@@ -245,9 +262,9 @@ runs_flat = {
 
 def main():
 
-    save_file_name = "selected_metrics_box.pdf"
+    save_file_name = "selected_metrics_stairs.pdf"
 
-    runs = runs_box
+    runs = runs_stairs
 
     metrics = collect_metrics_per_run(runs)
     plot_metrics(metrics, runs, save_file_name)

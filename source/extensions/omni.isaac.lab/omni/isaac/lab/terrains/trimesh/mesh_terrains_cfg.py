@@ -71,8 +71,10 @@ class MeshStairsTerrainCfg(SubTerrainBaseCfg):
     """The coordinate origin of each sub_terrain relative to the start position of the first stair step. This values determines how far in front of the first stair step the robot spawns. Must be negative."""
     
     width_to_height_ratio: float = 34 / 14
-    """The ratio of the width to the height of the stairs. (34 / 14) is value for the stair where video demonstrations were collected."""
+    """The ratio of the width to the height of the stairs. (34 / 14) is value for the stair where video demonstrations were collected. Only used if step_width is none."""
 
+    step_width: float | None = None
+    """Desired step_width in m. Set to none to compute the step width based on the width_to_height_ratio ratio."""
 
 @configclass
 class MeshInvertedPyramidStairsTerrainCfg(MeshPyramidStairsTerrainCfg):

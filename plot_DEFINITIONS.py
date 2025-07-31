@@ -8,7 +8,7 @@ METRIC_FIELD_PLOT_TITLE_MAPPING = {
     "agent_expert_distances": "Imitation score ↓",
     "heading_error": "Heading Error [rad]",
     "error_vel_yaw": "Tracking Error Yaw [rad]",
-    "real_curriculum_state": "Mean successful\nbox height [m]",  # TODO needs to be adjusted based on terrain
+    "real_curriculum_state": "Mean successful\nstep height [m]",  # TODO needs to be adjusted based on terrain
 }
 
 XY_FIELD_XY_LABEL_MAPPING = {

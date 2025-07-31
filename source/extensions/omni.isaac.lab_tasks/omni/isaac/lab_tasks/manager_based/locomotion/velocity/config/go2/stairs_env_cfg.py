@@ -26,7 +26,6 @@ class UnitreeGo2StairsEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
         super().__post_init__()
         
         self.terrain_type = "stairs"
-        parameters.set_curriculum(self, enable=False)
         parameters.set_terrain(self)
         parameters.set_rewards_simple(self)
         parameters.set_stairs_env_cfg_cmds(self)
@@ -53,6 +52,15 @@ class UnitreeGo2StairsEnvCfgSimpleRewardCurriculum(UnitreeGo2StairsEnvCfgSimpleR
         super().__post_init__()
 
         parameters.set_curriculum(self, enable=True)
+
+@configclass
+class UnitreeGo2StairsEnvCfgSimpleRewardCurriculum_PLAY(UnitreeGo2StairsEnvCfgSimpleRewardCurriculum):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        parameters.set_play_settings_flat(self)
+        parameters.set_play_settings_rough(self)
 
 
 #######################################################################
@@ -110,7 +118,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
-        
+
         self.terrain_type = "stairs"
         parameters.set_terrain(self)
         parameters.set_stairs_env_cfg_cmds(self)
@@ -132,17 +140,25 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # update motion files
         self.amp_motion_folder = "datasets/fromVision_motions_DepthCamStairs/*"
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
-        
-        
-    
+
     def update_motion_files(self):
+        import os
+
         motion_files = glob.glob(self.amp_motion_folder)
         self.amp_motion_files = motion_files
+        rsi_motion_files = [
+            f
+            for f in motion_files
+            if os.path.basename(f)
+            in {"stairs_2_5299211000_amp.txt", "walk_869488000_amp.txt"}
+        ]
 
         assert (
             self.events.reference_state_initialization is not None
         ), "Always expecting RSI. For evaluation, please use the same motion files as used for training."
-        self.events.reference_state_initialization.params["motion_files"] = motion_files
+        self.events.reference_state_initialization.params["motion_files"] = (
+            rsi_motion_files
+        )
 
 
 @configclass

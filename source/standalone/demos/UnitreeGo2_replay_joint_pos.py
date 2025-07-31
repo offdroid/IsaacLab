@@ -61,11 +61,10 @@ from omni.isaac.lab_assets.unitree import UNITREE_GO2_CFG  # isort:skip
 
 UNITREE_GO2_CFG.spawn.rigid_props.disable_gravity = True
 
-scene = "box"
-box_height = 0.2
+scene = "stairs"
 
 # Recorded jpos path
-recording_path = "datasets/fromVision_motions_DepthCam_standUp_feetZAmpl/stand_up_2431270000_amp.txt"  # "datasets/fromVision_motions/fromVision_amp.txt" || datasets/mocap_motions/trot2_amp.txt
+recording_path = "datasets/fromVision_motions_DepthCamStairs/stairs_1_5199540000_amp.txt"  # "datasets/fromVision_motions/fromVision_amp.txt" || datasets/mocap_motions/trot2_amp.txt
 
 freq = 0.2  # replay frequency in Hz for the recorded trajectory
 
@@ -126,6 +125,7 @@ def design_stairs_scene() -> tuple[dict, list[list[float]]]:
     terrain_cfg.num_rows = 1
     terrain_cfg.num_cols = 1
     terrain_cfg.sub_terrains["stairs"].step_height_range = (0.14, 0.14)
+    terrain_cfg.sub_terrains["stairs"].step_width = None
 
     # Handler for terrains importing
     terrain_importer_cfg = TerrainImporterCfg(

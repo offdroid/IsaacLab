@@ -154,8 +154,10 @@ def stairs_terrain(
     step_height = cfg.step_height_range[0] + difficulty * (
         cfg.step_height_range[1] - cfg.step_height_range[0]
     )
-    # step_width = step_height * cfg.width_to_height_ratio # demo was collected for a stair of step height 14cm and step width 34 cm. We want to keep that ratio for all generated stairs.
-    step_width = 0.3
+    if cfg.step_width is not None:
+        step_width = cfg.step_width
+    else:
+        step_width = step_height * cfg.width_to_height_ratio # demo was collected for a stair of step height 14cm and step width 34 cm. We want to keep that ratio for all generated stairs.
     
     terrain_params = {"step_height": step_height, "step_width": step_width}
 
