@@ -125,11 +125,12 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_stairs_env_cfg_reset_base(self)
         parameters.add_relative_position_on_stairs_observation(self)
         parameters.add_stair_parameters_observation(self)
-        parameters.set_curriculum(self, enable=True)
-
         parameters.set_velocity_rewards_amp(self)
 
-        self.events.reference_state_initialization = None
+        enable_rsi = True
+        parameters.set_curriculum(self, enable=not enable_rsi)
+        if not enable_rsi:
+            self.events.reference_state_initialization = None
 
         self.scene.num_envs = 2 * 4096  # 5480
 
@@ -153,9 +154,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             in {"stairs_2_5299211000_amp.txt", "walk_869488000_amp.txt"}
         ]
 
-        assert (
-            self.events.reference_state_initialization is not None
-        ), "Always expecting RSI. For evaluation, please use the same motion files as used for training."
+        # assert (
+        #     self.events.reference_state_initialization is not None
+        # ), "Always expecting RSI. For evaluation, please use the same motion files as used for training."
         self.events.reference_state_initialization.params["motion_files"] = (
             rsi_motion_files
         )
