@@ -11,7 +11,7 @@ from ..terrain_generator_cfg import TerrainGeneratorCfg
 
 BOX_TERRAINS_CFG = TerrainGeneratorCfg(
     size=(
-        7.0, # decided curriculum stage up-levels
+        7.0, # decides curriculum stage up-levels
         14.0,
     ),  # make it long enough to make sure robot doesn't fall down at end of platform (1ms * 20s = 20m)
     border_width=0.2,
@@ -25,7 +25,7 @@ BOX_TERRAINS_CFG = TerrainGeneratorCfg(
     sub_terrains={
         "box": terrain_gen.MeshBoxTerrainCfg(
             box_height_range=(0.0, 0.3),
-            platform_width=7.0,
+            platform_width=7.0, # 2.5 for video rendering
         )
     },
 )

@@ -27,6 +27,8 @@ class UnitreeGo2StandingEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
 
         self.terrain_type = "flat"
         
+        # TODO DR: set timing for random pushes
+        
         self.scene.num_envs = 4096  # with DR: 2 * 4096; without DR: 5480
         parameters.set_terrain(self)
         parameters.set_rewards_standing(self)
@@ -63,9 +65,8 @@ class UnitreeGo2StandingEnvCfgComplexReward(UnitreeGo2StandingEnvCfgSimpleReward
         # post init of parent
         super().__post_init__()
         
-        assert False, "To be implemented"
-
-        parameters.set_rewards_complex(self)
+        
+        parameters.set_rewards_standing_complex(self)
 
 
 @configclass
@@ -97,6 +98,10 @@ class AMPUnitreeGo2StandingEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         rsi_params = {
             "reference_states": ["joints", "base"],
+            "motion_files": [
+                # "datasets/fromVision_motions_DepthCam_standUp_feetZAmpl/stand_up_2431270000_amp.txt",
+                "datasets/fromVision_motions_DepthCam_obstacle/slow_1313807000_amp.txt",
+            ]
         }
         parameters.set_amp_settings(self, motion_folder = "datasets/fromVision_motions_DepthCam_standUp_feetZAmpl/*", **rsi_params)
 

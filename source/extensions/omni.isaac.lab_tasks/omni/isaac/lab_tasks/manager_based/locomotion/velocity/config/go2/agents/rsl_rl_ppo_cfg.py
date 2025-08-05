@@ -145,5 +145,5 @@ class UnitreeGo2StandingPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
 class UnitreeGo2AMPStandingPPORunnerCfg(UnitreeGo2AMPFlatPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
-        # self.algorithm.entropy_coef = 0.0
+        self.amp_task_reward_lerp = 0.5 # weighting factor of task reward (style reward is 1-task_reward_lerp)
         self.experiment_name = "unitree_go2_AMPstanding"

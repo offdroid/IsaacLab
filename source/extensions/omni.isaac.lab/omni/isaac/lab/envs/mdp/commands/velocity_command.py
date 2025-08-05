@@ -104,6 +104,11 @@ class UniformVelocityCommand(CommandTerm):
         self.metrics["target_yaw"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["heading_target"] = torch.zeros(self.num_envs, device=self.device)
         self.metrics["heading_error"] = torch.zeros(self.num_envs, device=self.device)
+        
+        if hasattr(self._env.cfg.rewards, "feet_height_l2"):
+            self.metrics["error_feet_height"] = torch.zeros(self.num_envs, device=self.device)
+            self.feet_indices = self.robot.find_bodies(["FR_foot", "FL_foot"])
+            
 
         self.mass = torch.zeros(self.num_envs, device=self.device) 
         self.mass = torch.sum(torch.tensor(self.robot.data.default_mass, device=self.device), dim=-1)
@@ -190,6 +195,12 @@ class UniformVelocityCommand(CommandTerm):
         self.metrics["target_yaw"] += self.vel_command_b[:, 2] / max_command_step
         self.metrics["heading_target"] += self.heading_target / max_command_step
         self.metrics["heading_error"] += torch.abs(math_utils.wrap_to_pi(self.heading_target[:] - self.robot.data.heading_w[:])) / max_command_step
+        
+        if "error_feet_height" in self.metrics:
+            feet_height = self.robot.data.body_pos_w[:,self.feet_indices[0], 2]
+            # TODO target feed height should be dynamically queried from command
+            target_height = torch.ones_like(feet_height) * 0.74
+            self.metrics["error_feet_height"] += torch.abs(feet_height - target_height).sum(dim=1) / max_command_step
 
     def _resample_command(self, env_ids: Sequence[int]):
         # sample velocity commands

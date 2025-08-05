@@ -28,7 +28,6 @@ metrics_to_plot = [
     # "agent_expert_distances",
 ]
 
-
 def load_yaml_file(file_path):
     try:
         with open(file_path, "r") as f:
@@ -49,6 +48,13 @@ def collect_metrics_per_run(runs_dict):
     metrics = defaultdict(list)
 
     for run_name, paths in runs_dict.items():
+        # Check if this is an N/A placeholder
+        if paths == None:
+            # Add N/A entries for all metrics
+            for metric in metrics_to_plot:
+                metrics[metric].append((run_name, None, None, None))
+            continue
+            
         all_metrics_per_seed = defaultdict(list)
 
         for path in paths:
@@ -97,10 +103,12 @@ def plot_metrics(metrics, runs, save_file_name):
         ax = plt.subplot2grid((rows, cols), (row, col))
 
         run_names = [v[0] for v in values]
-        means = [v[1] for v in values]
-        mins = [v[2] for v in values]
-        maxs = [v[3] for v in values]
-        errors = [[mean - mn, mx - mean] for mean, mn, mx in zip(means, mins, maxs)]
+        # check for None in case we want to plot N/A
+        means = [v[1] if v[1] is not None else 0 for v in values]
+        mins = [v[2] if v[2] is not None else 0 for v in values]
+        maxs = [v[3] if v[3] is not None else 0 for v in values]
+        errors = [[mean - mn if mean is not None else 0, mx - mean if mean is not None else 0] 
+                 for mean, mn, mx, v in zip(means, mins, maxs, values)]
         errors = np.array(errors).T  # shape (2, N)
 
         x_pos = np.arange(len(run_names))
@@ -114,6 +122,13 @@ def plot_metrics(metrics, runs, save_file_name):
             ],
             alpha=0.8,
         )
+
+        # Add N/A text for None values
+        for i, (x, v) in enumerate(zip(x_pos, values)):
+            if v[1] is None:  # Check if mean is None
+                ax.text(x, 0, "N/A", ha="center", va="bottom", 
+                       fontsize=16, fontweight="bold", 
+                       transform=ax.get_xaxis_transform())
 
         ax.set_xticks(x_pos)
         ax.set_xticklabels(run_names, rotation=45, ha="right", fontsize=8)
@@ -176,6 +191,22 @@ def plot_metrics(metrics, runs, save_file_name):
     plt.close()
 
 
+runs_standing = {
+    plot_DEFINITIONS.ExperimentNames.video_depth_cam: [
+        "logs/rsl_rl/unitree_go2_AMPstanding/2025-07-26_17-52-05_RSI_SEED_1",
+        "logs/rsl_rl/unitree_go2_AMPstanding/2025-07-26_17-52-05_RSI_SEED_2",
+        "logs/rsl_rl/unitree_go2_AMPstanding/2025-07-26_17-52-05_RSI_SEED_3",
+    ],
+    plot_DEFINITIONS.ExperimentNames.drl_simple_reward: [
+        # "logs/rsl_rl/unitree_go2_Box/2025-07-23_15-13-01_SimpleRew_Curr_SEED_1",
+        "logs/rsl_rl/unitree_go2_standing/2025-07-25_13-00-01_SimpleRew_SEED_1",
+        "logs/rsl_rl/unitree_go2_standing/2025-07-25_13-00-01_SimpleRew_SEED_2",
+        "logs/rsl_rl/unitree_go2_standing/2025-07-25_13-00-01_SimpleRew_SEED_3",
+    ],
+    plot_DEFINITIONS.ExperimentNames.drl_complex_reward: None,
+    plot_DEFINITIONS.ExperimentNames.mocap: None, # specify "N/A" plotting like this
+}
+
 runs_box = {
     plot_DEFINITIONS.ExperimentNames.video_depth_cam: [
         "logs/rsl_rl/unitree_go2_AMPBox/2025-07-19_12-52-33_Curr_RSI_SEED_1",
@@ -192,6 +223,11 @@ runs_box = {
         "logs/rsl_rl/unitree_go2_Box/2025-07-23_15-13-01_ComplexRew_Curr_SEED_2",
         "logs/rsl_rl/unitree_go2_Box/2025-07-23_15-13-01_ComplexRew_Curr_SEED_3",
     ],
+    plot_DEFINITIONS.ExperimentNames.mocap: [
+        "logs/rsl_rl/unitree_go2_AMPBox/2025-07-30_18-44-03_MoCapAMP_reduced_data_SEED_1", 
+        "logs/rsl_rl/unitree_go2_AMPBox/2025-07-30_18-44-03_MoCapAMP_reduced_data_SEED_2", 
+        "logs/rsl_rl/unitree_go2_AMPBox/2025-07-30_18-44-03_MoCapAMP_reduced_data_SEED_3", 
+    ]
 }
 
 runs_stairs = {

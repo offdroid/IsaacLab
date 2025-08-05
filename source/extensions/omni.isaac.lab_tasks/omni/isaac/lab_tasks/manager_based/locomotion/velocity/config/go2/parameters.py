@@ -150,7 +150,7 @@ def set_rewards_standing_amp(cfg):
         reward_obj.weight = 0.0
         
     # cfg.rewards.base_height_l2.weight = 1.0
-    cfg.rewards.head_height_l2.weight = 45.0
+    # cfg.rewards.head_height_l2.weight = 45.0
     cfg.rewards.feet_height_l2.weight = 45.0
     
     # Make robot stand still, i.e., avoid drift
@@ -209,6 +209,26 @@ def set_rewards_complex(cfg):
     cfg.rewards.base_height = None
     # Do not use the height scan for policy, only for getting the ground height
     cfg.observations.policy.height_scan = None
+    
+    
+def set_rewards_standing_complex(cfg):
+    # cfg.rewards.lin_vel_z_l2.weight = -2.0
+    # cfg.rewards.ang_vel_xy_l2.weight = -0.05
+    cfg.rewards.dof_torques_l2.weight = 0.1 * -0.0002
+    cfg.rewards.dof_acc_l2.weight =  0.02 * -2.5e-7  # do not use for ResRL
+    cfg.rewards.action_rate_l2.weight = 0.1 * -0.01
+    cfg.rewards.feet_air_time.weight = (
+        0.1 * 10  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
+    )
+    # # cfg.rewards.undesired_contacts_thigh.weight = -1.0
+    # cfg.rewards.undesired_contacts_calf.weight = -1.0
+    cfg.rewards.contact_forces.weight = 0.1 *-1.0
+    # cfg.rewards.flat_orientation_l2.weight = -0.01
+    cfg.rewards.joint_pos_limits.weight = 0.1 * -10.0 # do not use for ResRL
+    cfg.rewards.torque_limits.weight = 0.1 * -1.0e-5
+    cfg.rewards.joint_deviation_l1.weight = (
+        0.1 * -0.25
+    )  # consider reducing this in case performance on task reward is bad
 
 
 def set_stairs_env_cfg_cmds(cfg):
@@ -342,11 +362,18 @@ def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwa
     cfg.amp_motion_files = glob.glob(cfg.amp_motion_folder)
 
     params = {
+<<<<<<< HEAD
             "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
             "device": cfg.sim.device,
             "time_between_frames": cfg.decimation * cfg.sim.dt,
             "motion_files": cfg.amp_motion_files,
             "reference_states": ["joints", "base"],
+=======
+        "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
+        "device": cfg.sim.device,
+        "time_between_frames": cfg.decimation * cfg.sim.dt,
+        "motion_files": cfg.amp_motion_files, # by default RSI motion files are equal to AMP motion files. Overwrite this using the argument **kwargs!
+>>>>>>> upstream/add_latent_action_wrapper
     }
     params.update(kwargs)
 

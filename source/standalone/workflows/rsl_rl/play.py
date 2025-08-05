@@ -346,6 +346,7 @@ def main():
 
     # It is very unclean to use a second episode_length_buf besides the one in the environment. However, the one in the environment gets reset to 0 before I can calculate the metrics in this script. So I need to keep track of the episode lengths myself. In the future I'd like to find a way to avoid introducing a second episode_length_buf here.
     episode_length_buf = torch.zeros(env.unwrapped.num_envs, device=env.unwrapped.device)
+    early_termination_counter = 0
     obs_history_storage.add(obs)
     obs_history = obs_history_storage.get()
 
@@ -455,8 +456,13 @@ def main():
                     ].episode_metrics.items():
                         eval_episode_metrics.setdefault(metric_name, []).extend(metric_value[dones==1.0].cpu().tolist())
                     # Curriculum state
-                    if hasattr(env.unwrapped, 'curriculum_manager'):
-                        eval_episode_metrics["curriculum_state"] = env.unwrapped.curriculum_manager._curriculum_state["terrain_levels"]
+                    if hasattr(env.unwrapped, "curriculum_manager"):
+                        if "terrain_levels" in env.unwrapped.curriculum_manager._curriculum_state:
+                            eval_episode_metrics["curriculum_state"] = (
+                                env.unwrapped.curriculum_manager._curriculum_state[
+                                    "terrain_levels"
+                                ]
+                            )
                     # amp rewards
                     # eval_episode_metrics.setdefault("amp_rewards", []).extend(
                     #     (
@@ -481,6 +487,13 @@ def main():
                             .tolist()
                         )
                         agent_expert_distances[dones == 1.0] = 0.0
+
+                    # keep track of early-terminated episodes (i.e. non-success)
+                    early_termination_counter += (
+                        ((dones == 1) & (episode_length_buf < env.max_episode_length))
+                        .sum()
+                        .item()
+                    )
 
                 obs_history_storage.reset(dones)
 
@@ -518,7 +531,7 @@ def main():
             eval_episode_metrics[key] = torch.mean(torch.tensor(value)).item()
 
         # get real values for curriculum
-        if hasattr(env.unwrapped, "curriculum_manager"):
+        if "curriculum_state" in eval_episode_metrics:
             if (
                 "box"
                 in loaded_env_cfg["scene"]["terrain"]["terrain_generator"][
@@ -549,6 +562,9 @@ def main():
         eval_episode_metrics["num_envs"] = env.unwrapped.num_envs
         eval_episode_metrics["episodes_per_env"] = PLAY_EPISODES_PER_ENV
         eval_episode_metrics["total_episodes (real)"] = total_episodes_real
+
+        eval_episode_metrics["number_failed_episodes"] = early_termination_counter
+        eval_episode_metrics["successrate"] = (total_episodes_real - early_termination_counter) / total_episodes_real
 
         eval_episode_metrics["episode length in s (target)"] = PLAY_EPISODE_LENGTH
 

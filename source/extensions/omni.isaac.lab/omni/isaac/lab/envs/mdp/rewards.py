@@ -126,7 +126,7 @@ def base_height_l2(
 def head_height_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     asset : RigidObject = env.scene[asset_cfg.name]
     
-    target_height = 0.7
+    target_height = 0.74 # NOTE if you change this, you need to change the metrics calculation as the target height is hardcoded everywhere
     
     head_indices = asset.find_bodies(["Head_upper"]) # "Head_lower"
     head_height = asset.data.body_pos_w[:,head_indices[0], 2]
@@ -138,7 +138,7 @@ def head_height_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEnti
 def feet_height_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     asset : RigidObject = env.scene[asset_cfg.name]
     
-    target_height = 0.7
+    target_height = 0.74 # NOTE if you change this, you need to change the metrics calculation as the target height is hardcoded everywhere
     
         
     feet_indices = asset.find_bodies(["FR_foot", "FL_foot"])

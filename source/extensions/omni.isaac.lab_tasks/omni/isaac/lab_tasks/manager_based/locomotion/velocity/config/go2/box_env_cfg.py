@@ -27,6 +27,9 @@ class UnitreeGo2BoxEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
         
         self.terrain_type = "box"
         
+        # TODO DR: set timing for random pushes
+        
+        
         parameters.disable_domain_randomization(self)
         parameters.set_terrain(self)
         parameters.set_box_env_cfg_reset_base(self)
