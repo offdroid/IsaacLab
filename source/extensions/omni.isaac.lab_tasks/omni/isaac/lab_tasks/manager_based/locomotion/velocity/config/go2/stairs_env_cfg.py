@@ -127,7 +127,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.add_stair_parameters_observation(self)
         parameters.set_velocity_rewards_amp(self)
 
-        enable_rsi = True
+        enable_rsi = False
         parameters.set_curriculum(self, enable=not enable_rsi)
         if not enable_rsi:
             self.events.reference_state_initialization = None
