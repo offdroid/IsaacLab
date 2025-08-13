@@ -9,6 +9,8 @@ METRIC_FIELD_PLOT_TITLE_MAPPING = {
     "heading_error": "Heading Error [rad]",
     "error_vel_yaw": "Tracking Error Yaw [rad]",
     "real_curriculum_state": "Mean successful\nstep height [m]",  # TODO needs to be adjusted based on terrain
+    "error_feet_height": "Feet height error [m]",
+    "successrate": "Success rate",
 }
 
 XY_FIELD_XY_LABEL_MAPPING = {

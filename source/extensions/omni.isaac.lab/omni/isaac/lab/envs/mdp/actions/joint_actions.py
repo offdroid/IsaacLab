@@ -95,6 +95,20 @@ class JointAction(ActionTerm):
         else:
             raise ValueError(f"Unsupported offset type: {type(cfg.offset)}. Supported types are float and dict.")
 
+        joint_lower_limits = self._asset.data.joint_limits[..., 0]
+        joint_upper_limits = self._asset.data.joint_limits[..., 1]
+
+        soft_joint_limit_safety_factor = 0.97
+        joint_pos_mean = (joint_lower_limits + joint_upper_limits) / 2
+        joint_pos_range = joint_upper_limits - joint_lower_limits
+
+        self._soft_joint_lower_limits = (
+            joint_pos_mean - 0.5 * soft_joint_limit_safety_factor * joint_pos_range
+        )
+        self._soft_joint_upper_limits = (
+            joint_pos_mean + 0.5 * soft_joint_limit_safety_factor * joint_pos_range
+        )
+
     """
     Properties.
     """
@@ -118,8 +132,14 @@ class JointAction(ActionTerm):
     def process_actions(self, actions: torch.Tensor):
         # store the raw actions
         self._raw_actions[:] = actions
+
         # apply the affine transformations
-        self._processed_actions = self._raw_actions * self._scale + self._offset
+        # clip actions. This is done equally to DOOM (the deployment repo) for safety reasons. The joint target values should not be too high anyways.
+        self._processed_actions = torch.clamp(
+            self._raw_actions * self._scale + self._offset,
+            self._soft_joint_lower_limits,
+            self._soft_joint_upper_limits,
+        )
 
     def reset(self, env_ids: Sequence[int] | None = None) -> None:
         self._raw_actions[env_ids] = 0.0

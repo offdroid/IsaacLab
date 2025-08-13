@@ -248,9 +248,7 @@ def joint_vel_limits(
 """
 Action penalties.
 """
-
-
-def applied_torque_limits(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+def applied_torque_limits(env: ManagerBasedRLEnv, limit: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize applied torques if they cross the limits.
 
     This is computed as a sum of the absolute value of the difference between the applied torques and the limits.
@@ -263,10 +261,22 @@ def applied_torque_limits(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Sc
     asset: Articulation = env.scene[asset_cfg.name]
     # compute out of limits constraints
     # TODO: We need to fix this to support implicit joints.
-    out_of_limits = torch.abs(
-        asset.data.applied_torque[:, asset_cfg.joint_ids] - asset.data.computed_torque[:, asset_cfg.joint_ids]
+
+    # Usually the below implementation can be used. It just calculates the difference between computed torque (=unclipped) and applied torque (=clipped to actuator saturation). However, when switching off the clipping, this doesnt work.
+    # out_of_limits = torch.abs(
+    #     asset.data.applied_torque[:, asset_cfg.joint_ids] - asset.data.computed_torque[:, asset_cfg.joint_ids]
+    # )
+    # return torch.sum(out_of_limits, dim=1)
+
+    # Clip directly based on passed paramter. Usually, this should be asset.actuators["base_legs"]._saturation_effort.
+    penalty = (
+        torch.abs(asset.data.computed_torque[:, asset_cfg.joint_ids])
+        - limit
     )
-    return torch.sum(out_of_limits, dim=1)
+
+    penalty = torch.clamp(penalty, min=0)
+
+    return torch.sum(penalty, dim=1)
 
 
 def action_rate_l2(env: ManagerBasedRLEnv) -> torch.Tensor:

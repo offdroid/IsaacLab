@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
@@ -197,6 +199,8 @@ class DCMotor(IdealPDActuator):
             self._saturation_effort = self.cfg.saturation_effort
         else:
             self._saturation_effort = torch.inf
+        self.clip_effort_factor = self.cfg.clip_effort_factor
+        assert self.clip_effort_factor is None or self.clip_effort_factor > 0, "The clip effort factor must be greater than 0. You can use 'None' if you dont want to perform any clipping."
         # prepare joint vel buffer for max effort computation
         self._joint_vel = torch.zeros_like(self.computed_effort)
         # create buffer for zeros effort
@@ -204,6 +208,8 @@ class DCMotor(IdealPDActuator):
         # check that quantities are provided
         if self.cfg.velocity_limit is None:
             raise ValueError("The velocity limit must be provided for the DC motor actuator model.")
+
+        self.effort_log = []
 
     """
     Operations.
@@ -222,17 +228,50 @@ class DCMotor(IdealPDActuator):
     """
 
     def _clip_effort(self, effort: torch.Tensor) -> torch.Tensor:
+        if self.clip_effort_factor is None:
+            # we try to not clip the effort explicitely, as this is also not done in DOOM
+            return effort
+        
         # compute torque limits
         # -- max limit
-        max_effort = self._saturation_effort * (1.0 - self._joint_vel / self.velocity_limit)
+        max_effort = self.clip_effort_factor * self._saturation_effort * (1.0 - self._joint_vel / self.velocity_limit)
         max_effort = torch.clip(max_effort, min=self._zeros_effort, max=self.effort_limit)
         # -- min limit
-        min_effort = self._saturation_effort * (-1.0 - self._joint_vel / self.velocity_limit)
+        min_effort = self.clip_effort_factor * self._saturation_effort * (-1.0 - self._joint_vel / self.velocity_limit)
         min_effort = torch.clip(min_effort, min=-self.effort_limit, max=self._zeros_effort)
 
         # clip the torques based on the motor limits
-        return torch.clip(effort, min=min_effort, max=max_effort)
+        # self.effort_log.append(
+        #     torch.clip(effort, min=min_effort, max=max_effort).cpu().numpy().tolist()
+        # )
 
+        # efforts = np.array(self.effort_log).squeeze(axis=1)  # shape: (523, 12)
+
+        # joint_names = [
+        #     'FL_hip_joint', 'FR_hip_joint', 'RL_hip_joint', 'RR_hip_joint',
+        #     'FL_thigh_joint', 'FR_thigh_joint', 'RL_thigh_joint', 'RR_thigh_joint',
+        #     'FL_calf_joint', 'FR_calf_joint', 'RL_calf_joint', 'RR_calf_joint'
+        # ]
+
+        # timesteps = np.arange(efforts.shape[0])
+        # num_joints = efforts.shape[1]
+
+        # fig, axes = plt.subplots(num_joints, 1, figsize=(10, 2 * num_joints), sharex=True)
+
+        # for i in range(num_joints):
+        #     axes[i].plot(timesteps, efforts[:, i])
+        #     axes[i].set_ylabel(joint_names[i])
+        #     axes[i].grid(True)
+
+        # axes[-1].set_xlabel('Timestep')
+        # fig.suptitle("Robot Joint Efforts Over Time (clipped)", fontsize=16)
+        # fig.tight_layout(rect=[0, 0, 1, 0.97])  # Leave space for the title
+        # plt.savefig("effortsClipped_ComplexRewardFlat.pdf")
+        # effort_list = effort[0].cpu().tolist()
+        # rounded_effort = [round(val) for val in effort_list]
+        # print(rounded_effort)
+
+        return torch.clip(effort, min=min_effort, max=max_effort)
 
 class DelayedPDActuator(IdealPDActuator):
     """Ideal PD actuator with delayed command application.
@@ -338,7 +377,6 @@ class DelayedDCMotor(DCMotor):
         control_action.joint_efforts = self.efforts_delay_buffer.compute(control_action.joint_efforts)
         # compte actuator model
         return super().compute(control_action, joint_pos, joint_vel)
-    
 
 
 class RemotizedPDActuator(DelayedPDActuator):

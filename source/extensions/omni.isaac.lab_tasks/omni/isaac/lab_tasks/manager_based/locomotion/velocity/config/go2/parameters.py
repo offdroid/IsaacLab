@@ -138,8 +138,11 @@ def set_terrain(cfg):
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "flat_noisy":
-        # TODO
-        raise ValueError(f"Untested.")
+        cfg.scene.terrain.terrain_generator = None
+        cfg.curriculum.terrain_levels = None
+        cfg.scene.height_scanner = None
+        cfg.observations.policy.height_scan = None
+        cfg.scene.terrain.terrain_generator = FLAT_TERRAINS_CFG
     else:
         raise ValueError(f"Unknown terrain type: {cfg.terrain_type}.")
 
@@ -173,7 +176,7 @@ def set_rewards_standing(cfg):
     cfg.commands.base_velocity.ranges.lin_vel_x=(0.0, 0.0)
     cfg.commands.base_velocity.ranges.lin_vel_y=(0.0, 0.0)
     cfg.rewards.track_lin_vel_xy_exp.weight = 0.3
-    
+
 def set_rewards_standing_amp(cfg):
     # disable rewards
     for field in fields(cfg.rewards):
@@ -205,6 +208,21 @@ def set_velocity_rewards_amp(cfg):
     cfg.rewards.track_lin_vel_xy_exp.params["std"] = (
         0.22  # TODO should this be ang_vel?
     )
+    
+    cfg.rewards.feet_air_time.weight = (
+        100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
+    )
+    cfg.rewards.flat_orientation_l2.weight = -25
+    cfg.rewards.feet_slide.weight = -5.0
+    cfg.rewards.dof_torques_l2.weight = -0.006
+    cfg.rewards.torque_limits.weight = -35
+    cfg.rewards.torque_limits_2.weight = -100
+    cfg.rewards.dof_acc_l2.weight = -5e-6
+    
+    cfg.rewards.undesired_contacts_thigh.weight = -1.0
+    cfg.rewards.undesired_contacts_calf.weight = -1.0
+    cfg.rewards.contact_forces.weight = -1.0
+
 
 def set_pose2d_rewards_amp(cfg):
     # disable rewards
@@ -241,7 +259,10 @@ def set_rewards_complex(cfg):
     # Do not use the height scan for policy, only for getting the ground height
     cfg.observations.policy.height_scan = None
     
-    
+    cfg.rewards.feet_slide.weight = -0.05
+    # TODO: desired base height
+
+
 def set_rewards_standing_complex(cfg):
     # cfg.rewards.lin_vel_z_l2.weight = -2.0
     # cfg.rewards.ang_vel_xy_l2.weight = -0.05
@@ -407,6 +428,24 @@ def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwa
         func=mdp.reference_state_initialization, mode="reset", params=params
     )
 
+
+# NOTE this function keeps track of DR params that were used to train previous policies. Consider this function legacy. It should only be used if you know what you are doing.
+def previous_domain_randomization_params(cfg):
+    cfg.events.physics_material.params["static_friction_range"] = (0.6, 3.0)
+    cfg.events.physics_material.params["dynamic_friction_range"] = (0.6, 1.2)
+    cfg.events.physics_material.params["restitution_range"] = (0.0, 0.1)
+    cfg.events.randomize_link_mass.params["mass_distribution_params"] = (0.9, 1.1)
+    cfg.events.push_robot.params["velocity_range"] = {
+        "x": (-0.5, 0.5),
+        "y": (-0.5, 0.5),
+    }
+    cfg.events.base_com = None
+    cfg.events.links_com = None
+    cfg.events.reset_gravity = None
+    cfg.events.actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
+    cfg.events.actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
+
+
 def disable_domain_randomization(cfg):
     cfg.scene.robot.actuators["base_legs"].min_delay = 0
     cfg.scene.robot.actuators["base_legs"].max_delay = 0
@@ -432,6 +471,9 @@ def disable_domain_randomization(cfg):
     cfg.events.randomize_link_mass = None
     cfg.events.actuator_gains = None
     cfg.events.joint_limits = None
+    cfg.events.base_com = None
+    cfg.events.links_com = None
+    cfg.events.reset_gravity = None
     
     cfg.disable_domain_randomization = True
 

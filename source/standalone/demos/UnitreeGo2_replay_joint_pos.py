@@ -67,6 +67,7 @@ scene = "stairs"
 recording_path = "datasets/fromVision_motions_depth_stairs_walk/stairs_expert.txt"  # "datasets/fromVision_motions/fromVision_amp.txt" || datasets/mocap_motions/trot2_amp.txt
 
 freq = 1.0  # replay frequency in Hz for the recorded trajectory
+replay_in_recording_time = True # this will replay the recorded trajectory with its FrameDuration parameter. This flag overwrites the freq parameter
 
 
 def define_origins(num_origins: int, spacing: float) -> list[list[float]]:
@@ -198,6 +199,7 @@ def design_box_scene() -> tuple[dict, list[list[float]]]:
     return scene_entities, terrain_importer.env_origins
 
 def run_simulator(
+    recording_dt: float,
     sim: sim_utils.SimulationContext,
     entities: dict[str, Articulation],
     origins: torch.Tensor,
@@ -227,10 +229,13 @@ def run_simulator(
         # reset the internal state
         robot.reset()
 
-    freq = torch.tensor(freq, device=sim.device)
     phase = torch.tensor(0.0, device=sim.device)
     num_frames = torch.tensor(motion_data.shape[0], device=sim.device)
-
+    freq = torch.tensor(freq, device=sim.device)
+    
+    if replay_in_recording_time:
+        freq = 1 / (num_frames * recording_dt)
+    
     # Simulate physics
     while simulation_app.is_running():
         start_time = time.time()
@@ -313,13 +318,16 @@ def run_simulator(
         sleep_duration = sim_dt - (time.time() - start_time)
         if sleep_duration > 0:
             time.sleep(sleep_duration)
+        else:
+            # print(f"Playback sub real-time: {sleep_duration}")
+            pass
         count += 1
 
 
 def main():
     """Main function."""
 
-    global recording_path, robot_local_offset
+    global recording_path, robot_local_offset, recording_dt
 
     # Initialize the simulation context
     sim = sim_utils.SimulationContext(sim_utils.SimulationCfg(dt=0.01))
@@ -341,10 +349,6 @@ def main():
         motion_json = json.load(f)
         
     recording_dt = float(motion_json["FrameDuration"])
-    assert (
-        recording_dt == 0.03334 or recording_dt == 0.01667 or recording_dt == 0.021
-    )  # should be 30Hz (video) or 60Hz (mocap)
-    # recording_dt *= 5 if recording_dt == 0.01667 else 5 # slow down a little
     
     motion_data = AMPLoader("cuda", recording_dt, motion_files=[recording_path], transform_root_trajectory=True)
     
@@ -360,7 +364,7 @@ def main():
     # Now we are ready!
     print("[INFO]: Setup complete...")
     # Run the simulator
-    run_simulator(sim, scene_entities, scene_origins, motion_data)
+    run_simulator(recording_dt, sim, scene_entities, scene_origins, motion_data)
 
 
 if __name__ == "__main__":

@@ -104,6 +104,9 @@ class DCMotorCfg(IdealPDActuatorCfg):
 
     saturation_effort: float = MISSING
     """Peak motor force/torque of the electric DC motor (in N-m)."""
+    
+    clip_effort_factor: float = 1.0
+    """Factor at which to clip the applied effort in simulation. If set to None, no clipping is performed. Default in IsaacLab is 1.0"""
 
 
 @configclass

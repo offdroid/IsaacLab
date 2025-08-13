@@ -20,10 +20,12 @@ plt.rcParams.update(
 
 
 metrics_to_plot = [
-    "error_vel_xy",
+    "error_feet_height",
+    # "error_vel_xy",
     # "error_vel_yaw",
     "mean_mechanical_cot",
-    "real_curriculum_state",
+    # "real_curriculum_state",
+    "successrate",
     # "heading_error",
     # "agent_expert_distances",
 ]
@@ -203,7 +205,11 @@ runs_standing = {
         "logs/rsl_rl/unitree_go2_standing/2025-07-25_13-00-01_SimpleRew_SEED_2",
         "logs/rsl_rl/unitree_go2_standing/2025-07-25_13-00-01_SimpleRew_SEED_3",
     ],
-    plot_DEFINITIONS.ExperimentNames.drl_complex_reward: None,
+    plot_DEFINITIONS.ExperimentNames.drl_complex_reward: [
+        "logs/rsl_rl/unitree_go2_standing/2025-08-01_14-22-59_ComplexRew_SEED_1",
+        "logs/rsl_rl/unitree_go2_standing/2025-08-01_14-22-59_ComplexRew_SEED_2",
+        "logs/rsl_rl/unitree_go2_standing/2025-08-01_14-22-59_ComplexRew_SEED_3",
+    ],
     plot_DEFINITIONS.ExperimentNames.mocap: None, # specify "N/A" plotting like this
 }
 

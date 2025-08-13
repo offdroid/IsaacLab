@@ -111,6 +111,8 @@ import yaml
 import gymnasium as gym
 import os
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
 import time
 
 from rsl_rl.runners import OnPolicyRunner, AMPOnPolicyRunner
@@ -404,6 +406,8 @@ def main():
     timestep = 0
     total_num_steps = 0
     # simulate environment
+    
+    # action_log = []
     while simulation_app.is_running():
         # Record the start time of the current loop
         current_time = time.time()
@@ -412,6 +416,8 @@ def main():
         with torch.inference_mode():
             # Agent steppinp
             actions = policy(obs_history)
+            # action_log.append(actions.cpu().numpy().tolist())
+            
             # Environment stepping
             obs, _, dones, extras, *optional_values = env.step(actions)
             if env_cfg.is_amp_env:
@@ -514,12 +520,38 @@ def main():
             sleep_time = simulated_step_time - elapsed_real_time
             if sleep_time > 0:
                 time.sleep(sleep_time)
-            # else:
-            #     print(f"WARNING: Simulation slower than real time for {sleep_time}s!")
+            else:
+                # print(f"WARNING: Simulation slower than real time for {sleep_time}s!")
+                pass
 
         if args_cli.evaluate:
             if total_num_steps >= NUM_EVAL_STEPS:
                 break
+            
+    # Assuming action_log is already defined and has shape (523, 1, 12)
+    # Example: action_log = np.random.rand(523, 1, 12)
+    # actions = np.array(action_log).squeeze(axis=1)  # shape: (523, 12)
+
+    # joint_names = [
+    #     'FL_hip_joint', 'FR_hip_joint', 'RL_hip_joint', 'RR_hip_joint',
+    #     'FL_thigh_joint', 'FR_thigh_joint', 'RL_thigh_joint', 'RR_thigh_joint',
+    #     'FL_calf_joint', 'FR_calf_joint', 'RL_calf_joint', 'RR_calf_joint'
+    # ]
+
+    # timesteps = np.arange(actions.shape[0])
+    # num_joints = actions.shape[1]
+
+    # fig, axes = plt.subplots(num_joints, 1, figsize=(10, 2 * num_joints), sharex=True)
+
+    # for i in range(num_joints):
+    #     axes[i].plot(timesteps, actions[:, i])
+    #     axes[i].set_ylabel(joint_names[i])
+    #     axes[i].grid(True)
+
+    # axes[-1].set_xlabel('Timestep')
+    # fig.suptitle("Robot Joint Actions Over Time", fontsize=16)
+    # fig.tight_layout(rect=[0, 0, 1, 0.97])  # Leave space for the title
+    # plt.savefig("actions_AMPflatVision_2025-08-06_08-47-51_flat_test_DR5_improved_minimal_motion_files_SEED_1.pdf")
 
     # store the metrics
     if args_cli.evaluate:

@@ -17,9 +17,9 @@ for seed in "${seeds[@]}"; do
 
     # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py env.amp_motion_folder='datasets/fromVision_motions_DepthCam_extended/*' agent.amp_motion_folder='datasets/fromVision_motions_DepthCam_extended/*' --task Isaac-Velocity-AMPFlat-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_fromVision_motions_DepthCam_extended_DR2"
 
-    ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py env.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl/*' agent.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl/*' --task Isaac-Velocity-AMPFlat-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_DR2"
+    ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-AMPFlat-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_flat_test_DR5_mocap_AMP_for_hardware"
 
-    ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py env.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl/*' agent.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl/*' --task Isaac-Velocity-AMPNoisyFlat-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_DR2"
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py env.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl/*' agent.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl/*' --task Isaac-Velocity-AMPNoisyFlat-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_DR2"
 
     # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py env.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse/*' agent.amp_motion_folder='datasets/fromVision_motions_DepthCam_extendedWithoutReverse/*' --task Isaac-Velocity-AMPFlat-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_fromVision_motions_DepthCam_extendedWithoutReverse"
 
@@ -31,8 +31,22 @@ for seed in "${seeds[@]}"; do
 
     # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Flat-SimpleReward-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_simpleReward_DR"
 
-    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Flat-ComplexReward-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_complexReward_test_DR3"
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Flat-ComplexReward-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_complexReward_DR5"
+
+
+
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Box-ComplexReward-Unitree-Go2-v0 --headless --seed 3 --log_dir "2025-07-23_15-13-01_ComplexRew_Curr"
+
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Box-SimpleReward-Unitree-Go2-v0 --headless --seed 2 --log_dir "2025-07-23_15-13-01_SimpleRew_Curr"
+
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Standing-SimpleReward-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_SimpleRew"
+
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-AMPStanding-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_RSI"
+
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-AMPBox-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_MoCapAMP_reduced_data"
+
+    # ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Standing-ComplexReward-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_ComplexRew"
 done
 
 
-# ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Flat-ComplexReward-Unitree-Go2-v0 --headless --seed 1 --log_dir "testtest"
+# ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-Flat-ComplexReward-Unitree-Go2-v0 --headless --seed 1 --log_dir "testtest"bash

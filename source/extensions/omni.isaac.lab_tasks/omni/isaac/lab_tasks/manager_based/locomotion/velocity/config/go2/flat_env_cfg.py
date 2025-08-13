@@ -75,15 +75,15 @@ class AMPUnitreeGo2FlatEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_terrain(self)
 
         parameters.set_velocity_rewards_amp(self)
-
+        
         self.scene.num_envs = 2 * 4096  # with DR: 2 * 4096; without DR: 5480
 
         # style
         self.action_manager_class = "ActionManager"  # Default action manager
+        
+        
+        parameters.set_amp_settings(self, motion_folder = "datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_minimal_feet_forward/*")
 
-        parameters.set_amp_settings(self)
-        # parameters.disable_domain_randomization(self) # for reproducibility of old exps
-        # self.terminations.bad_orientation = None # for reproducibility of old exps
 
     def update_motion_files(self):
         motion_files = glob.glob(self.amp_motion_folder)
@@ -103,4 +103,4 @@ class AMPUnitreeGo2FlatEnvCfg_PLAY(AMPUnitreeGo2FlatEnvCfg):
 
         parameters.set_play_settings_flat(self)
 
-        self.amp_motion_folder = "datasets/dummy/*"  # required otherwise it wont start; it is recomended to use same motion files as used for training
+        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_minimal_feet_forward/*"  # required otherwise it wont start; it is recomended to use same motion files as used for training
