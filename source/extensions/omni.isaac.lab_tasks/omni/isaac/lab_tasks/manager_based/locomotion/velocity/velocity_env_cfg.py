@@ -426,15 +426,31 @@ class TerminationsCfg:
         func=mdp.illegal_contact,
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
     )
+    calf_contact1 = DoneTerm(
+        func=mdp.illegal_contact,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*calf"), "threshold": 1.0},
+    )
+    tigh_contact= DoneTerm(
+        func=mdp.illegal_contact,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*thigh"), "threshold": 1.0},
+    )
+    lower_head_contact= DoneTerm(
+        func=mdp.illegal_contact,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="Head_lower"), "threshold": 1.0},
+    )
+    hip_contact = DoneTerm(
+        func=mdp.illegal_contact,
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_hip"), "threshold": 1.0},
+    )
     bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": torch.pi/2})
     # joint_pos_out_of_limits = DoneTerm(
     #     func=mdp.joint_pos_out_of_limit,
     #     params={"asset_cfg": SceneEntityCfg("robot")}
     # )
-    # root_height_below_minimum = DoneTerm(
-    #     func=root_height_below_minimum,
-    #     params={"asset_cfg": SceneEntityCfg("robot"), "minimum_height": 0.20}
-    # )
+    root_height_below_minimum = DoneTerm(
+        func=root_height_below_minimum,
+        params={"asset_cfg": SceneEntityCfg("robot"), "minimum_height": 0.15}
+    )
     # bad_orientation = DoneTerm(
     #     func=bad_orientation,
     #     params={"asset_cfg": SceneEntityCfg("robot"), "limit_angle": 0.4},

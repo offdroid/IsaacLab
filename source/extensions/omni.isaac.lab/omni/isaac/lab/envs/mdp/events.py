@@ -137,6 +137,9 @@ class reference_state_initialization(ManagerTermBase):
             # clamp joint vel to limits
             joint_vel_limits = self.asset.data.soft_joint_vel_limits[env_ids]
             joint_vel = joint_vel.clamp_(-joint_vel_limits, joint_vel_limits)
+            if True:
+                print("[WARN] Zeroing joint velocities.")
+                joint_vel = torch.zeros_like(joint_vel)
 
             # set into the physics simulation
             self.asset.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
@@ -145,6 +148,18 @@ class reference_state_initialization(ManagerTermBase):
         if "base" in self.reference_states:
             base_pos = AMPLoader.get_root_pos_batch(frames) 
             base_rot = AMPLoader.get_root_rot_batch(frames)
+
+            if True:
+                print("[WARN] Applying rotation fix to reference state for RSI.")
+                import math
+                roll90 = math_utils.quat_from_euler_xyz(
+                    roll = torch.tensor(-math.pi/2, device=base_rot.device),
+                    pitch=torch.tensor(0.0, device=base_rot.device),
+                    yaw=torch.tensor(90.0, device=base_rot.device)
+                )
+                roll90 = roll90.expand(base_rot.shape[0], -1)
+                base_rot = math_utils.quat_mul(roll90, base_rot)
+
             base_vel = AMPLoader.get_linear_vel_batch(frames)
             base_ang_vel = AMPLoader.get_angular_vel_batch(frames)  # TODO this is zero as it is not contained in retargeting data at the moment
 
@@ -154,7 +169,7 @@ class reference_state_initialization(ManagerTermBase):
                     base_pos
                     + env.scene.env_origins[env_ids],
                     base_rot,
-                    base_vel,
+                    torch.zeros_like(base_vel),
                     torch.zeros_like(
                         base_ang_vel
                     ),  # TODO is not included in retargeted data for now

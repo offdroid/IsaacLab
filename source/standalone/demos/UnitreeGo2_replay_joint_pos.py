@@ -64,9 +64,9 @@ UNITREE_GO2_CFG.spawn.rigid_props.disable_gravity = True
 scene = "stairs"
 
 # Recorded jpos path
-recording_path = "datasets/fromVision_motions_DepthCamStairs/stairs_1_5199540000_amp.txt"  # "datasets/fromVision_motions/fromVision_amp.txt" || datasets/mocap_motions/trot2_amp.txt
+recording_path = "datasets/fromVision_motions_depth_stairs_walk/stairs_expert.txt"  # "datasets/fromVision_motions/fromVision_amp.txt" || datasets/mocap_motions/trot2_amp.txt
 
-freq = 0.2  # replay frequency in Hz for the recorded trajectory
+freq = 1.0  # replay frequency in Hz for the recorded trajectory
 
 
 def define_origins(num_origins: int, spacing: float) -> list[list[float]]:
@@ -261,6 +261,15 @@ def run_simulator(
 
         pos_interpolated = AMPLoader.slerp(pos_start, pos_end, alpha)
         rot_interpolated = utils.quaternion_slerp(rot_start.clone(), rot_end.clone(), alpha)
+
+        # Rotation hack. Might be incorrect or uncessary depending on the recorded demo
+        import math
+        roll90 = math_utils.quat_from_euler_xyz(
+            roll = torch.tensor(-math.pi/2, device=rot_interpolated.device),
+            pitch=torch.tensor(0.0, device=rot_interpolated.device),
+            yaw=torch.tensor(90.0, device=rot_interpolated.device)
+        )
+        rot_interpolated = math_utils.quat_mul(roll90, rot_interpolated)
 
         jpos_interpolated = AMPLoader.slerp(jpos_start, jpos_end, alpha)
         # pos_interpolated_relative_to_origin = pos_interpolated - AMPLoader.get_root_pos(

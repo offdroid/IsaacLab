@@ -87,7 +87,8 @@ class UnitreeGo2AMPFlatPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
         
     def update_motion_files(self):
         motion_files = glob.glob(self.amp_motion_folder)
-        self.amp_motion_files = motion_files
+        del motion_files
+        self.amp_motion_files = ["datasets/fromVision_motions_depth_stairs_walk/stairs_expert.txt"]
 
 # This class only exists to provide self.experiment_name for logging.
 @configclass

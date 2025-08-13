@@ -46,14 +46,23 @@ def set_play_settings_rough(cfg):
 def set_curriculum(cfg, enable: bool):
     if not enable:
         cfg.scene.terrain.terrain_generator.curriculum = False
-        cfg.curriculum = None
+        cfg.curriculum.terrain_levels = None
         cfg.scene.terrain.max_init_terrain_level = None
     
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
-            0.13,
-            0.16,
+            0.14,
+            0.14,
         )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = None
+
+        cfg.curriculum = None
+        # cfg.curriculum.epsiode_length = CurrTerm(
+        #     func=mdp.modify_env_param,
+        #     params={
+        #         "address": "cfg.episode_length_s",
+        #         "modify_fn": resample_epsiode_length,  # e.g., decrease or increase
+        #     },
+        # )
     else:
         cfg.scene.terrain.terrain_generator.curriculum = True
         cfg.scene.terrain.max_init_terrain_level = 0
@@ -68,6 +77,28 @@ def set_curriculum(cfg, enable: bool):
             0.16,
         )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
+
+def resample_epsiode_length(
+    env, env_id, data
+):
+    print(data)
+    print("common_step_counter", env.common_step_counter)
+    if hasattr(env.cfg, "episode_length_s"):
+        print("episode_length_s", env.cfg.episode_length_s)
+
+    lower_cap = 0.1
+    cap = 20.0
+    k = 0.8
+
+    t = torch.as_tensor(env.common_step_counter / env.num_envs, dtype=torch.float32)
+    new_data = cap * (1 - torch.exp(-k * t))
+    if data != new_data:
+        print(new_data)
+        return max(lower_cap, new_data)
+
+    return mdp.modify_env_param.NO_CHANGE
+
+        
 
 
 def set_terrain(cfg):
