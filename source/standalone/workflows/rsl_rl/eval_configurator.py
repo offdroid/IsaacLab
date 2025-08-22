@@ -119,3 +119,23 @@ class RecordJposEpisodeTargetVelocity(TargetDistribution):
         assert kwargs["args_cli"].yaw == 0, (
             "You most likely want to set yaw to 0 for evaluation."
         )
+
+
+@dataclass
+class AgentExpertDistance(TargetDistribution):
+    eval_metric_subfolder: str = "AgentExpertDistanceEvaluation"
+    record_episode_jpos = False
+
+    play_episodes_per_env = int(1)
+    num_envs = 1
+    # TODO: Use this for the agent expert distances
+    jpos_log_filename: str = (
+        "f'x_{env_cfg.commands.base_velocity.ranges.lin_vel_x[0]}_y_{env_cfg.commands.base_velocity.ranges.lin_vel_y[0]}_yaw_{env_cfg.commands.base_velocity.ranges.ang_vel_z[0]}.th'"
+    )
+
+    def run_checks(self, **kwargs):
+        super().run_checks(**kwargs)
+
+        assert (
+            kwargs["args_cli"].yaw == 0
+        ), "You most likely want to set yaw to 0 for evaluation."

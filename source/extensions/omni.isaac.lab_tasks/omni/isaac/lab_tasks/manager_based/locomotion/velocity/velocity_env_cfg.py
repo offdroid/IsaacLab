@@ -163,10 +163,42 @@ class ObservationsCfg:
 
         def __post_init__(self):
             self.enable_corruption = True
+            # Disable concatenation for symmetry loss
+            self.concatenate_terms = True
+            self.history_length = 5
+
+    @configclass
+    class RndStateCfg(ObsGroup):
+        """Observations for policy group."""
+
+        # observation terms (order preserved)
+
+        # cmd terms
+        base_lin_vel = ObsTerm(
+            func=mdp.base_lin_vel, noise=Unoise(n_min=-0.1, n_max=0.1)
+        )
+        base_ang_vel = ObsTerm(
+            func=mdp.base_ang_vel, noise=Unoise(n_min=-0.2, n_max=0.2)
+        )
+
+        # state terms
+        projected_gravity = ObsTerm(
+            func=mdp.projected_gravity,
+            noise=Unoise(n_min=-0.05, n_max=0.05),
+        )
+        joint_pos = ObsTerm(
+            func=mdp.joint_pos_rel, noise=Unoise(n_min=-0.01, n_max=0.01)
+        )
+        joint_vel = ObsTerm(func=mdp.joint_vel_rel, noise=Unoise(n_min=-1.5, n_max=1.5))
+        actions = ObsTerm(func=mdp.last_action)
+
+        def __post_init__(self):
+            self.enable_corruption = False
             self.concatenate_terms = True
 
     # observation groups
     policy: PolicyCfg = PolicyCfg()
+    # rnd_state: RndStateCfg = RndStateCfg()
 
 
 @configclass
@@ -460,6 +492,7 @@ class RewardsCfg:
     head_height_l2 = RewTerm(func=mdp.head_height_l2, weight=-0.0)
     feet_height_l2 = RewTerm(func=mdp.feet_height_l2, weight=-0.0)
 
+
 @configclass
 class TerminationsCfg:
     """Termination terms for the MDP."""
@@ -467,37 +500,56 @@ class TerminationsCfg:
     time_out = DoneTerm(func=mdp.time_out, time_out=True)
     base_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"), "threshold": 1.0},
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names="base"),
+            "threshold": 1.0,
+        },
     )
-    calf_contact1 = DoneTerm(
+    calf_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*calf"), "threshold": 1.0},
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*calf"),
+            "threshold": 500.0,
+        },
     )
-    tigh_contact= DoneTerm(
+    thigh_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*thigh"), "threshold": 1.0},
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*thigh"),
+            "threshold": 50.0,
+        },
     )
-    lower_head_contact= DoneTerm(
+    lower_head_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names="Head_lower"), "threshold": 1.0},
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names="Head_lower"),
+            "threshold": 1.0,
+        },
     )
     hip_contact = DoneTerm(
         func=mdp.illegal_contact,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_hip"), "threshold": 1.0},
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_hip"),
+            "threshold": 1.0,
+        },
     )
-    bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": torch.pi/2})
+    bad_orientation = DoneTerm(
+        func=mdp.bad_orientation, params={"limit_angle": torch.pi / 2}
+    )
+    # bad_yaw = DoneTerm(func=mdp.bad_yaw, params={"limit_range": (torch.pi/2 - torch.pi/2, torch.pi/2 + torch.pi/2)})
     # joint_pos_out_of_limits = DoneTerm(
     #     func=mdp.joint_pos_out_of_limit,
     #     params={"asset_cfg": SceneEntityCfg("robot")}
     # )
     root_height_below_minimum = DoneTerm(
         func=root_height_below_minimum,
-        params={"asset_cfg": SceneEntityCfg("robot"), "minimum_height": 0.15}
+        params={"asset_cfg": SceneEntityCfg("robot"), "minimum_height": 0.15},
     )
     # bad_orientation = DoneTerm(
     #     func=bad_orientation,
     #     params={"asset_cfg": SceneEntityCfg("robot"), "limit_angle": 0.4},
     # )
+
 
 @configclass
 class CurriculumCfg:
@@ -514,11 +566,11 @@ class CurriculumCfg:
 @configclass
 class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
     """Configuration for the locomotion velocity-tracking environment."""
-    
+
     action_manager_class: str = "ActionManager"
 
     # Scene settings
-    scene: MySceneCfg = MySceneCfg(num_envs=2*4096, env_spacing=2.5)
+    scene: MySceneCfg = MySceneCfg(num_envs=2 * 4096, env_spacing=2.5)
     # Basic settings
     observations: ObservationsCfg = ObservationsCfg()
     actions: ActionsCfg = ActionsCfg()
@@ -532,10 +584,10 @@ class LocomotionVelocityRoughEnvCfg(ManagerBasedRLEnvCfg):
 
     def __post_init__(self):
         """Post initialization."""
-        
+
         self.scene.robot = UNITREE_GO2_CFG.replace(prim_path="{ENV_REGEX_NS}/Robot")
         self.scene.height_scanner.prim_path = "{ENV_REGEX_NS}/Robot/base"
-        
+
         # general settings
         self.decimation = 4
         self.episode_length_s = 20.0

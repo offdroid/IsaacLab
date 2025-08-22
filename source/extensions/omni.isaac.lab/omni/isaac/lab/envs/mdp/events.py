@@ -14,6 +14,7 @@ the event introduced by the function.
 
 from __future__ import annotations
 
+import numpy as np
 import torch
 from typing import TYPE_CHECKING, Literal
 
@@ -61,13 +62,16 @@ class reference_state_initialization(ManagerTermBase):
             device=cfg.params.get("device", "cuda"),
             time_between_frames=cfg.params.get("time_between_frames", None),
             transform_root_trajectory=True,
+            preload_transitions=False,
+            augment_with_mirror=False,
         )
 
         self.reference_states = cfg.params.get(
             "reference_states", ["joints"]
         )  # by default we do only care about joint states for reference init
 
-
+        self._sampled_traj_ids = np.zeros(env.scene.num_envs, dtype=np.int64)
+        self._sampled_times = np.zeros(env.scene.num_envs, dtype=np.double)
 
     def __call__(
         self,
@@ -88,11 +92,16 @@ class reference_state_initialization(ManagerTermBase):
         if env_ids is None:
             env_ids = torch.arange(env.scene.num_envs, device=device)
 
-        frames, times = self.amp_loader.get_full_frame_batch(len(env_ids), return_times=True)
-        
+        assert not self.amp_loader.preload_transitions
+        frames, traj_ids, times = self.amp_loader.get_full_frame_batch(
+            len(env_ids), return_sampled_ids=True
+        )
+        self._sampled_traj_ids[env_ids.cpu()] = traj_ids
+        self._sampled_times[env_ids.cpu()] = times
+
         # reference phase initialization for ResidualRL phases
         # TODO check if phase reset yields correcto obs in manager_base_rl_env
-        if env.cfg.action_manager_class == "ResidualRLActionManager":
+        if env.cfg.action_manager_class in ["ResidualRLActionManager"]:
             reference_phases = (
                 (
                     2
@@ -137,7 +146,7 @@ class reference_state_initialization(ManagerTermBase):
             # clamp joint vel to limits
             joint_vel_limits = self.asset.data.soft_joint_vel_limits[env_ids]
             joint_vel = joint_vel.clamp_(-joint_vel_limits, joint_vel_limits)
-            if True:
+            if False:
                 print("[WARN] Zeroing joint velocities.")
                 joint_vel = torch.zeros_like(joint_vel)
 
@@ -146,30 +155,32 @@ class reference_state_initialization(ManagerTermBase):
 
         # NOTE this pos initialization should depend on terrain levels in the future to avoid floating above terrain or collision with terrain.
         if "base" in self.reference_states:
-            base_pos = AMPLoader.get_root_pos_batch(frames) 
+            base_pos = AMPLoader.get_root_pos_batch(frames)
             base_rot = AMPLoader.get_root_rot_batch(frames)
 
             if True:
                 print("[WARN] Applying rotation fix to reference state for RSI.")
                 import math
+
                 roll90 = math_utils.quat_from_euler_xyz(
-                    roll = torch.tensor(-math.pi/2, device=base_rot.device),
+                    roll=torch.tensor(-math.pi / 2, device=base_rot.device),
                     pitch=torch.tensor(0.0, device=base_rot.device),
-                    yaw=torch.tensor(90.0, device=base_rot.device)
+                    yaw=torch.tensor(math.pi / 2, device=base_rot.device),
                 )
                 roll90 = roll90.expand(base_rot.shape[0], -1)
                 base_rot = math_utils.quat_mul(roll90, base_rot)
 
             base_vel = AMPLoader.get_linear_vel_batch(frames)
-            base_ang_vel = AMPLoader.get_angular_vel_batch(frames)  # TODO this is zero as it is not contained in retargeting data at the moment
+            base_ang_vel = AMPLoader.get_angular_vel_batch(
+                frames
+            )  # TODO this is zero as it is not contained in retargeting data at the moment
 
             # Combine new root pose
             root_state = torch.cat(
                 [
-                    base_pos
-                    + env.scene.env_origins[env_ids],
+                    base_pos + env.scene.env_origins[env_ids],
                     base_rot,
-                    torch.zeros_like(base_vel),
+                    base_vel,  # torch.zeros_like(base_vel),
                     torch.zeros_like(
                         base_ang_vel
                     ),  # TODO is not included in retargeted data for now
@@ -407,7 +418,8 @@ def randomize_rigid_body_mass(
             inertias[env_ids] = asset.data.default_inertia[env_ids] * ratios
         # set the inertia tensors into the physics simulation
         asset.root_physx_view.set_inertias(inertias, env_ids)
-        
+
+
 def randomize_rigid_body_com(
     env: ManagerBasedEnv,
     env_ids: torch.Tensor | None,
@@ -437,7 +449,9 @@ def randomize_rigid_body_com(
     # sample random CoM values
     range_list = [com_range.get(key, (0.0, 0.0)) for key in ["x", "y", "z"]]
     ranges = torch.tensor(range_list, device="cpu")
-    rand_samples = math_utils.sample_uniform(ranges[:, 0], ranges[:, 1], (len(env_ids), 3), device="cpu").unsqueeze(1)
+    rand_samples = math_utils.sample_uniform(
+        ranges[:, 0], ranges[:, 1], (len(env_ids), 3), device="cpu"
+    ).unsqueeze(1)
 
     # get the current com of the bodies (num_assets, num_bodies)
     coms = asset.root_physx_view.get_coms().clone()

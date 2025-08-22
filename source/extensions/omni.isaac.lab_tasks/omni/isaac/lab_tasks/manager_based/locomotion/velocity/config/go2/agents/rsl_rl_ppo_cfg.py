@@ -10,6 +10,8 @@ from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import (
     RslRlOnPolicyRunnerCfg,
     RslRlPpoActorCriticCfg,
     RslRlPpoAlgorithmCfg,
+    RslRlSymmetryCfg,
+    RslRlRndCfg,
 )
 
 from rsl_rl.runners import OnPolicyRunner, AMPOnPolicyRunner
@@ -41,6 +43,21 @@ class UnitreeGo2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         lam=0.95,
         desired_kl=0.01,
         max_grad_norm=1.0,
+        # rnd_cfg = RslRlRndCfg(
+        #     weight=0.1,
+        #     weight_schedule=None,
+        #     reward_normalization= False,
+        #     learning_rate=0.001,
+        #     num_outputs=1,
+        #     predictor_hidden_dims=[-1],
+        #     target_hidden_dims=[-1],
+        # ),
+        # symmetry_cfg=RslRlSymmetryCfg(
+        #     use_data_augmentation=False,
+        #     use_mirror_loss=False,
+        #     mirror_loss_coeff=0.5,
+        #     data_augmentation_func="omni.isaac.lab_tasks.manager_based.locomotion.velocity.mdp:data_augmentation_func",
+        # ),
     )
 
 
@@ -87,8 +104,7 @@ class UnitreeGo2AMPFlatPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
         
     def update_motion_files(self):
         motion_files = glob.glob(self.amp_motion_folder)
-        del motion_files
-        self.amp_motion_files = ["datasets/fromVision_motions_depth_stairs_walk/stairs_expert.txt"]
+        self.amp_motion_files = motion_files
 
 # This class only exists to provide self.experiment_name for logging.
 @configclass

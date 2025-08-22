@@ -269,10 +269,11 @@ def run_simulator(
 
         # Rotation hack. Might be incorrect or uncessary depending on the recorded demo
         import math
+
         roll90 = math_utils.quat_from_euler_xyz(
-            roll = torch.tensor(-math.pi/2, device=rot_interpolated.device),
-            pitch=torch.tensor(0.0, device=rot_interpolated.device),
-            yaw=torch.tensor(90.0, device=rot_interpolated.device)
+            roll=torch.tensor(math.pi / 2, device=rot_interpolated.device),
+            pitch=torch.tensor(math.pi, device=rot_interpolated.device),
+            yaw=torch.tensor(-math.pi / 2, device=rot_interpolated.device),
         )
         rot_interpolated = math_utils.quat_mul(roll90, rot_interpolated)
 
@@ -294,8 +295,8 @@ def run_simulator(
                 [
                     pos_interpolated + origins[0],
                     rot_interpolated,
-                    torch.zeros_like(pos_start), # base lin vel
-                    torch.zeros_like(pos_start), # base ang vel
+                    torch.zeros_like(pos_start),  # base lin vel
+                    torch.zeros_like(pos_start),  # base ang vel
                 ],
                 dim=-1,
             ).unsqueeze(0)

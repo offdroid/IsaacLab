@@ -293,7 +293,7 @@ def main():
     # export policy to onnx/jit
     export_model_dir = os.path.join(os.path.dirname(resume_path), "exported")
     export_policy_as_jit(
-        ppo_runner.alg.actor_critic,
+        ppo_runner.alg.policy,
         ppo_runner.obs_normalizer,
         path=export_model_dir,
         filename="policy.pt",
@@ -386,6 +386,7 @@ def main():
 
     if args_cli.evaluate:
         eval_episode_metrics = dict()
+        collected_agent_expert_distances_individual = []
 
         NUM_EVAL_STEPS = (
             PLAY_EPISODES_PER_ENV
@@ -420,14 +421,18 @@ def main():
             
             # Environment stepping
             obs, _, dones, extras, *optional_values = env.step(actions)
-            if env_cfg.is_amp_env:
+            if env_cfg.is_amp_env and args_cli.evaluate:
 
                 amp_observations = env.unwrapped.get_amp_observations()
                 agent_expert_distances += torch.cdist(amp_observations, interpolated_expert_trajectories).min(dim=1).values
 
-                # for i, traj in enumerate(interpolated_expert_trajectories_list):
-                #     assert amp_observations.shape[0] == 1, "Expect only one environment."
-                #     agent_expert_distances_individual[timestep, i] = torch.cdist(amp_observations, traj).min(dim=1).values[0]
+                for i, traj in enumerate(interpolated_expert_trajectories_list):
+                    assert (
+                        amp_observations.shape[0] == 1
+                    ), "Expect only one environment."
+                    agent_expert_distances_individual[timestep, i] = (
+                        torch.cdist(amp_observations, traj).min(dim=1).values[0]
+                    )
 
                 # NOTE using the discriminator output to calculate style imitation is suboptimal. Its better to introduce the agent_expert_distances metric.
                 # next_amp_obs_with_term = torch.clone(next_amp_obs)
@@ -440,9 +445,35 @@ def main():
                 # amp_rewards_buffer += amp_rewards_logging
 
             if args_cli.evaluate and eval_config.record_episode_jpos:
-                jpos_log[total_num_steps // env.unwrapped.num_envs] = (
-                    env.unwrapped.scene["robot"].data.joint_pos
+                from rsl_rl.datasets.motion_loader import AMPLoader
+
+                t = total_num_steps // env.unwrapped.num_envs
+                jpos_log[
+                    t, :, AMPLoader.ROOT_POS_START_IDX : AMPLoader.ROOT_POS_END_IDX
+                ] = (
+                    env.unwrapped.scene["robot"].data.root_state_w[:, :3]
+                    - env.unwrapped.scene.env_origins
                 )
+                jpos_log[
+                    t, :, AMPLoader.ROOT_ROT_START_IDX : AMPLoader.ROOT_ROT_END_IDX
+                ] = env.unwrapped.scene["robot"].data.root_state_w[:, 3:7]
+                jpos_log[
+                    t, :, AMPLoader.LINEAR_VEL_START_IDX : AMPLoader.LINEAR_VEL_END_IDX
+                ] = env.unwrapped.scene["robot"].data.root_state_w[:, 7:10]
+                jpos_log[
+                    t,
+                    :,
+                    AMPLoader.ANGULAR_VEL_START_IDX : AMPLoader.ANGULAR_VEL_END_IDX,
+                ] = env.unwrapped.scene["robot"].data.root_state_w[:, 10:13]
+                # Joints
+                jpos_log[
+                    t, :, AMPLoader.JOINT_POSE_START_IDX : AMPLoader.JOINT_POSE_END_IDX
+                ] = env.unwrapped.scene["robot"].data.joint_pos[
+                    :, JOINT_ISAAC_LAB_TO_UNITREE_MAPPING
+                ]
+                jpos_log[
+                    t, :, AMPLoader.JOINT_VEL_START_IDX : AMPLoader.JOINT_VEL_END_IDX
+                ] = env.unwrapped.scene["robot"].data.joint_vel
 
             total_num_steps += env.unwrapped.num_envs
             episode_length_buf += 1
@@ -493,6 +524,13 @@ def main():
                             .tolist()
                         )
                         agent_expert_distances[dones == 1.0] = 0.0
+
+                        assert list(dones.size()) == [1], dones.shape
+                        if dones[0].item() == 1:
+                            collected_agent_expert_distances_individual.append(
+                                (agent_expert_distances_individual).cpu()
+                            )
+                            agent_expert_distances_individual[:, :] = 0.0
 
                     # keep track of early-terminated episodes (i.e. non-success)
                     early_termination_counter += (
@@ -609,9 +647,25 @@ def main():
         print(f"Metrics: {eval_episode_metrics}")
 
         if eval_config.record_episode_jpos:
-            jpos_log_path = os.path.join(eval_metric_folder, eval(eval_config.jpos_log_filename))
+            import json
+
+            demo_log_path = os.path.join(eval_metric_folder, "demo.txt")
+            with open(demo_log_path, "w", encoding="utf-8") as f:
+                json.dump(jpos_log[:, 0, :].tolist(), f)
+            print(f"Demo saved to: {demo_log_path}")
+
+        if eval_config.record_episode_jpos:
+            jpos_log_path = os.path.join(
+                eval_metric_folder, eval(eval_config.jpos_log_filename)
+            )
             torch.save(jpos_log, jpos_log_path)
             print(f"Joints positions log saved to: {jpos_log_path}")
+
+        aedi_path = os.path.join(
+            eval_metric_folder, "agent_expert_distances_individual.txt"
+        )
+        torch.save(torch.stack(collected_agent_expert_distances_individual), aedi_path)
+        print(f"Agent expert distances saved to: {aedi_path}")
 
     # close the simulator
     env.close()

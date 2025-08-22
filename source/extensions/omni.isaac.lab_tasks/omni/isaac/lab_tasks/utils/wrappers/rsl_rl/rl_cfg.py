@@ -36,6 +36,44 @@ class RslRlPpoActorCriticCfg:
 
 
 @configclass
+class RslRlRndCfg:
+    weight: float = 0.0
+    """initial weight of the RND reward"""
+    weight_schedule: dict | None = None
+    """note: this is a dictionary with a required key called "mode". Please check the RND module for more information"""
+    reward_normalization: bool = False
+    """whether to normalize RND reward"""
+    learning_rate: float = 0.001
+    """learning rate for RND"""
+    num_outputs: int = 1
+    """number of outputs of RND network. Note: if -1, then the network will use dimensions of the observation"""
+    predictor_hidden_dims: list[int] = [-1]
+    """hidden dimensions of predictor network"""
+    target_hidden_dims: list[int] = [-1]
+    """hidden dimensions of target network"""
+
+
+@configclass
+class RslRlSymmetryCfg:
+    use_data_augmentation: bool = False
+    """this adds symmetric trajectories to the batch"""
+    use_mirror_loss: bool = False
+    """this adds symmetry loss term to the loss function"""
+    data_augmentation_func: str = (
+        "omni.isaac.lab_tasks.manager_based.locomotion.velocity.mdp:get_symmetric_states"
+    )
+    """string containing the module and function name to import
+    Example: "legged_gym.envs.locomotion.anymal_c.symmetry:get_symmetric_states"
+        @torch.no_grad()
+        def get_symmetric_states(
+            obs: Optional[torch.Tensor] = None, actions: Optional[torch.Tensor] = None, cfg: "BaseEnvCfg" = None, obs_type: str = "policy"
+        ) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    mirror_loss_coeff: float = 0.0
+    """coefficient for symmetry loss term. If 0, no symmetry loss is used"""
+
+
+@configclass
 class RslRlPpoAlgorithmCfg:
     """Configuration for the PPO algorithm."""
 
@@ -77,6 +115,12 @@ class RslRlPpoAlgorithmCfg:
 
     max_grad_norm: float = MISSING
     """The maximum gradient norm."""
+
+    symmetry_cfg: RslRlSymmetryCfg = None
+    """The symmetry configuration."""
+
+    rnd_cfg: RslRlRndCfg = None
+    """The Random Network Distillation configuration."""
 
 
 @configclass

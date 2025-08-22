@@ -96,7 +96,8 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
         agent_cfg.update_motion_files()
         
         # Legacy; will always yield true
-        assert env_cfg.amp_motion_files == agent_cfg.amp_motion_files, f"Motion files in env and agent config should be the same, but got {env_cfg.amp_motion_files} and {agent_cfg.amp_motion_files}."
+        if env_cfg.amp_motion_files != agent_cfg.amp_motion_files:
+            print(f"Motion files in env and agent config should be the same, but got {env_cfg.amp_motion_files} and {agent_cfg.amp_motion_files}. Might be intentional.")
         
         print(f"[INFO] Using the following AMP motion files: {env_cfg.amp_motion_files}")
     

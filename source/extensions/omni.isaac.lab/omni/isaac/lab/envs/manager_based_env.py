@@ -261,7 +261,7 @@ class ManagerBasedEnv:
             self.sim.render()
 
         # return observations
-        return self.observation_manager.compute(), self.extras
+        return self.observation_manager.compute(update_history=True), self.extras
 
     def step(self, action: torch.Tensor) -> tuple[VecEnvObs, dict]:
         """Execute one time-step of the environment's dynamics.
@@ -307,7 +307,7 @@ class ManagerBasedEnv:
             self.event_manager.apply(mode="interval", dt=self.step_dt)
 
         # return observations and extras
-        return self.observation_manager.compute(), self.extras
+        return self.observation_manager.compute(update_history=True), self.extras
 
     @staticmethod
     def seed(seed: int = -1) -> int:

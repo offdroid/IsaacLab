@@ -27,6 +27,7 @@ from omni.isaac.lab.terrains.config.stairs import STAIRS_TERRAINS_CFG  # isort: 
 
 from omni.isaac.lab.terrains.config.box import BOX_TERRAINS_CFG  # isort: skip
 
+
 def set_play_settings_flat(cfg):
     cfg.scene.num_envs = 100
     cfg.scene.env_spacing = 2.5
@@ -48,7 +49,9 @@ def set_curriculum(cfg, enable: bool):
         cfg.scene.terrain.terrain_generator.curriculum = False
         cfg.curriculum.terrain_levels = None
         cfg.scene.terrain.max_init_terrain_level = None
-    
+        if cfg.curriculum is not None:
+            cfg.curriculum.terrain_levels = None
+
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
             0.14,
             0.14,
@@ -86,16 +89,18 @@ def resample_epsiode_length(
     if hasattr(env.cfg, "episode_length_s"):
         print("episode_length_s", env.cfg.episode_length_s)
 
-    lower_cap = 0.1
+def resample_epsiode_length(env, env_id, data):
+    # data is the old episode_length_s
+    # print("common_step_counter =", env.common_step_counter, "; data =", data)
+
+    lower_cap = 0.05
     cap = 20.0
     k = 0.8
 
     t = torch.as_tensor(env.common_step_counter / env.num_envs, dtype=torch.float32)
-    new_data = cap * (1 - torch.exp(-k * t))
-    if data != new_data:
-        print(new_data)
-        return max(lower_cap, new_data)
-
+    new_len: torch.Tensor = cap * (1 - torch.exp(-k * t))
+    if data != new_len:
+        return max(lower_cap, new_len)
     return mdp.modify_env_param.NO_CHANGE
 
         
@@ -376,10 +381,11 @@ def set_box_env_cfg_cmds(cfg):
 
 
 def set_stairs_env_cfg_reset_base(cfg):
+    # "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
     cfg.events.reset_base.params["pose_range"] = {
-        "x": (-0.5, 0.5),
-        "y": (-0.1, 0.1),
-        "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
+        "yaw": (math.pi / 2, math.pi / 2),
+        "y": (-0.5, -0.5),
+        "x": (0, 0),
     }
 
 

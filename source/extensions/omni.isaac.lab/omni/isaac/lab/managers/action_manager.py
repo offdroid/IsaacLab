@@ -875,6 +875,64 @@ class ResidualRLActionManager(PhaseActionManager):
         return [self.robot_action_dim + 1] 
 
 
+class MotionBlendingActionManager(PhaseActionManager):
+    def __init__(self, cfg: object, env: ManagerBasedEnv):
+        super().__init__(cfg, env)
+
+        self._amp_loader = None
+
+    def update(self, amp_loader, traj_ids, times):
+        if self._amp_loader is None:
+            self._amp_loader = amp_loader
+        self.traj_ids = traj_ids
+        self.times = times
+        self.num_frames = self._amp_loader.trajectory_num_frames[traj_ids]
+
+    def process_action(self, action: torch.Tensor):
+        # Dont inherit from base class as it checks for action dimensionality, and this is not correct for inheriting classes that change the actions
+        if self._amp_loader is not None:
+            subst = (
+                self._amp_loader.time_between_frames
+                + self._amp_loader.trajectory_frame_durations[self.traj_ids]
+            )
+            eps_length = self._env.episode_length_buf.cpu().numpy() * self._env.step_dt
+            times = np.minimum(
+                self.times + eps_length,
+                self._amp_loader.trajectory_lens[self.traj_ids] - subst,
+            )
+
+            reference = self._amp_loader.get_full_frame_at_time_batch(
+                self.traj_ids, times
+            )
+            reference_jpos = self._amp_loader.__class__.get_joint_pose_batch(reference)
+        else:
+            print("[WARN] amp loader is none in motion blending action manager")
+
+        # split the actions and apply to each tensor
+        idx = 0
+        for term in self._terms.values():
+            assert list(self._terms.keys()) == [
+                "joint_pos"
+            ], "Only joint_pos actions supported."
+            term_actions = action[:, idx : idx + term.action_dim]
+            # we treat residual RL as time-varying offset for actuator target commands; term.action_dim is 12 so no need to change this line
+            if self._amp_loader is not None:
+
+                def decay(t):
+                    return np.exp(-1 * t)
+
+                alpha = decay(
+                    self._env.episode_length_buf.cpu().numpy() * self._env.step_dt
+                )
+                term._offset = AMPLoader.slerp(
+                    term._asset.data.default_joint_pos[:, term._joint_ids],
+                    torch.as_tensor(reference_jpos, device=self.device),
+                    torch.as_tensor(alpha, device=self.device).unsqueeze(-1),
+                )
+            term.process_actions(term_actions)
+            idx += term.action_dim
+
+
 class LegwisePhaseActionManager(ActionManager):
     """Extends the standard action manager with a phase for each leg. This is a misuse of the action manager, but convenient as the action manager is called every env step."""
 

@@ -17,6 +17,7 @@ from typing import TYPE_CHECKING
 from omni.isaac.lab.assets import Articulation, RigidObject
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.sensors import ContactSensor
+from omni.isaac.lab.utils.math import euler_xyz_from_quat
 
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedRLEnv
@@ -57,6 +58,18 @@ def bad_orientation(
     # extract the used quantities (to enable type-hinting)
     asset: RigidObject = env.scene[asset_cfg.name]
     return torch.acos(-asset.data.projected_gravity_b[:, 2]).abs() > limit_angle
+
+
+def bad_yaw(
+    env: ManagerBasedRLEnv,
+    limit_range: tuple[float, float],
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Terminate when the asset's yaw is too far from the desired orientation limits."""
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    _, _, yaw = euler_xyz_from_quat(asset.data.root_quat_w)
+    return torch.logical_or(limit_range[0] > yaw, yaw > limit_range[1])
 
 
 def root_height_below_minimum(
