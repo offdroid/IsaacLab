@@ -15,7 +15,6 @@ from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
 from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
 
-
 from omni.isaac.lab_tasks.manager_based.navigation.mdp.rewards import (
     position_command_error_tanh,
     heading_command_error_abs,
@@ -25,6 +24,7 @@ from omni.isaac.lab.utils.noise import (
     AdditiveUniformNoiseCfg as Unoise,
     UniformSinusodalPositionNoiseCfg as USinPosNoise,
     UniformAngleNoiseCfg as UAngleNoise,
+    BinaryNoiseCfg as BinaryNoise,
 )
 from omni.isaac.lab.utils.modifiers import ModifierCfg, sinusoidal_positional_encoding
 
@@ -137,7 +137,7 @@ def set_curriculum(cfg, enable: bool):
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
             0.0,
-            0.16,
+            0.20,
         )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
@@ -177,9 +177,9 @@ def set_terrain(cfg):
             0.01,
             0.06,
         )
-        cfg.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = (
-            0.01
-        )
+        cfg.scene.terrain.terrain_generator.sub_terrains[
+            "random_rough"
+        ].noise_step = 0.01
     elif cfg.terrain_type == "stairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         cfg.curriculum.terrain_levels = None
@@ -224,7 +224,7 @@ def set_rewards_simple(cfg):
         1.5  # was 0.75 before adding actuator delay
     )
     cfg.rewards.termination_penalty.weight = -200.0
-    
+
 
 def set_rewards_standing(cfg):
     # disable rewards
@@ -477,7 +477,7 @@ def set_box_env_cfg_cmds(cfg):
 def set_stairs_env_cfg_reset_base(cfg):
     # "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
     cfg.events.reset_base.params["pose_range"] = {
-        "yaw": (math.pi / 2, math.pi / 2),
+        "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
         "y": (-0.5, -0.5),
         "x": (0, 0),
     }
@@ -506,6 +506,8 @@ def add_relative_position_on_stairs_observation(cfg):
     cfg.observations.policy.is_on_stairs = ObsTerm(
         func=mdp.is_on_stairs,
     )
+        noise=BinaryNoise(prob_flip=0.05),
+        noise=BinaryNoise(prob_flip=0.05),
 
 
 def add_relative_position_to_box_observation(cfg):

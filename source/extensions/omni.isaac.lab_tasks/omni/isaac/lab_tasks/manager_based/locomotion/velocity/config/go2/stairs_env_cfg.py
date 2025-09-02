@@ -200,12 +200,13 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         super().__post_init__()
 
         self.terrain_type = "stairs"
-        parameters.disable_domain_randomization(self)
+        # parameters.disable_domain_randomization(self)
         parameters.set_terrain(self)
         parameters.set_stairs_env_cfg_cmds(self)
         parameters.set_stairs_env_cfg_reset_base(self)
         parameters.add_relative_position_on_stairs_observation(self)
         parameters.add_stair_parameters_observation(self)
+        self.observations.policy.yaw = None
         parameters.set_velocity_rewards_amp(self)
         parameters.set_curriculum(self, enable=False)
 
@@ -219,7 +220,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         )
         self.events.reference_state_initialization = None
 
-        self.scene.num_envs = 2 * 4096  # 5480
+        self.scene.num_envs = 4096  # 5480
         # style
         # self.action_manager_class = "ActionManager"  # Default action manager
 

@@ -99,6 +99,12 @@ def uniform_sinusodal_position_noise(
     )
 
 
+def binary_noise(data: torch.Tensor, cfg: noise_cfg.BinaryNoiseCfg) -> torch.Tensor:
+    """Applies a uniform noise to a given data set encoded with sinusoidal positional encoding"""
+    flip = torch.rand_like(data.to(torch.float32)) < cfg.prob_flip
+    return data ^ flip
+
+
 def gaussian_noise(data: torch.Tensor, cfg: noise_cfg.GaussianNoiseCfg) -> torch.Tensor:
     """Applies a gaussian noise to a given data set.
 

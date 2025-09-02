@@ -28,6 +28,7 @@ Usage:
 
 from .noise_cfg import NoiseCfg  # noqa: F401
 from .noise_cfg import (
+    BinaryNoiseCfg,
     ConstantNoiseCfg,
     GaussianNoiseCfg,
     NoiseModelCfg,
@@ -40,6 +41,7 @@ from .noise_cfg import (
 from .noise_model import (
     NoiseModel,
     NoiseModelWithAdditiveBias,
+    binary_noise,
     constant_noise,
     gaussian_noise,
     uniform_angle_noise,

@@ -94,6 +94,16 @@ class UniformSinusodalPositionNoiseCfg(NoiseCfg):
 
 
 @configclass
+class BinaryNoiseCfg(NoiseCfg):
+    """Configuration for a binary noise term, which flips the data with a certain probablity"""
+
+    func = noise_model.binary_noise
+
+    prob_flip: torch.Tensor | float = 0.1
+    """Probablity that noise will flip data. Defaults to 0.1."""
+
+
+@configclass
 class GaussianNoiseCfg(NoiseCfg):
     """Configuration for an additive gaussian noise term."""
 
