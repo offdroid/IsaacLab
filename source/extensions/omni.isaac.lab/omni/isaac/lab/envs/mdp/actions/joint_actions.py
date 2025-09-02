@@ -135,11 +135,7 @@ class JointAction(ActionTerm):
 
         # apply the affine transformations
         # clip actions. This is done equally to DOOM (the deployment repo) for safety reasons. The joint target values should not be too high anyways.
-        self._processed_actions = torch.clamp(
-            self._raw_actions * self._scale + self._offset,
-            self._soft_joint_lower_limits,
-            self._soft_joint_upper_limits,
-        )
+        self._processed_actions =  self._raw_actions * self._scale + self._offset
 
     def reset(self, env_ids: Sequence[int] | None = None) -> None:
         self._raw_actions[env_ids] = 0.0
@@ -157,6 +153,18 @@ class JointPositionAction(JointAction):
         # use default joint positions as offset
         if cfg.use_default_offset:
             self._offset = self._asset.data.default_joint_pos[:, self._joint_ids].clone()
+            
+    def process_actions(self, actions: torch.Tensor):
+        # store the raw actions
+        self._raw_actions[:] = actions
+
+        # apply the affine transformations
+        # clip actions. This is done equally to DOOM (the deployment repo) for safety reasons. The joint target values should not be too high anyways.
+        self._processed_actions = torch.clamp(
+            self._raw_actions * self._scale + self._offset,
+            self._soft_joint_lower_limits,
+            self._soft_joint_upper_limits,
+        )
 
     def apply_actions(self):
         # set position targets

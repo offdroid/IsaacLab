@@ -604,7 +604,7 @@ def main():
             if sleep_time > 0:
                 time.sleep(sleep_time)
             else:
-                # print(f"WARNING: Simulation slower than real time for {sleep_time}s!")
+                print(f"WARNING: Simulation slower than real time for {sleep_time}s!")
                 pass
 
         if args_cli.evaluate:

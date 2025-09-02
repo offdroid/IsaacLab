@@ -97,6 +97,9 @@ class Articulation(AssetBase):
             cfg: A configuration instance.
         """
         super().__init__(cfg)
+        
+        self.jpos_log = []
+        self.torques_log = []
 
     """
     Properties
@@ -1231,6 +1234,11 @@ class Articulation(AssetBase):
                 joint_pos=self._data.joint_pos[:, actuator.joint_indices],
                 joint_vel=self._data.joint_vel[:, actuator.joint_indices],
             )
+            # self.jpos_log.append(self._data.joint_pos_target[:, actuator.joint_indices][0].clone().tolist())
+
+            # self.torques_log.append(control_action.joint_efforts[0].clone().tolist())
+
+
             # update targets (these are set into the simulation)
             if control_action.joint_positions is not None:
                 self._joint_pos_target_sim[:, actuator.joint_indices] = control_action.joint_positions

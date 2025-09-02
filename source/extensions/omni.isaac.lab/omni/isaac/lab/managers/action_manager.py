@@ -379,6 +379,202 @@ class ActionManager(ManagerBase):
             self._terms[term_name] = term
 
 
+class OscillatorGaitGenerator:
+    """
+    Generates a rhythmic trotting gait using oscillators and analytical IK.
+    """
+
+    def __init__(self, num_envs: int, device: str = "cpu"):
+        self.num_envs = num_envs
+        self.device = device
+
+        # --- Oscillator Parameters ---
+        self.phase = torch.zeros(self.num_envs, 1, device=self.device)
+        self.times = torch.zeros(self.num_envs, 1, device=self.device)
+        self.frequency = 2 # rad/s, controls the speed of the gait (reduced for smoother motion)
+
+        # Phase shifts for a trotting gait (diagonal pairs FR/RL and FL/RR move together)
+        self.phase_shifts = torch.tensor([[torch.pi, 0.0, 0.0, torch.pi]], device=self.device)
+
+        # Hip positions relative to base frame (based on Unitree Go2 dimensions)
+        self.hip_pos = torch.tensor(
+            [
+                [0.188, 0.05, 0.0],   # FL
+                [0.188, -0.05, 0.0],  # FR
+                [-0.188, 0.05, 0.0],  # RL
+                [-0.188, -0.05, 0.0], # RR
+            ],
+            device=self.device,
+        ).repeat(self.num_envs, 1, 1)
+
+        # Offsets from the base frame to the neutral foot position (aligned under hips)
+        self.default_foot_pos = self.hip_pos.clone()
+        self.default_foot_pos[..., 2] = -0.35
+
+        # Oscillator amplitudes for step motion
+        self.max_step_length_amp = 0.05 # m (reduced for stability)
+        self.step_length_ramp_up_time = 5.0
+        self.step_height_amp = 0.15  # m (reduced for stability)
+
+        # --- Kinematic Parameters ---
+        self.thigh_length = 0.213  # meters
+        self.calf_length = 0.213   # meters
+
+    def step(self, dt: float) -> torch.Tensor:
+        """
+        Advances the gait by one time step `dt` and returns target joint positions.
+
+        Args:
+            dt: The simulation time step.
+
+        Returns:
+            A tensor of shape (num_envs, 12) containing the target joint angles.
+        """
+        # 1. Update the phase and compute target foot positions from the oscillator (in body frame)
+        
+        # at the beginning of episode, the robot should stand a bit to reach an equilibrium before starting the motion.
+        self.times += dt
+        cond = (self.times < 1.0).unsqueeze(-1)  # (200, 1, 1)
+        cond = cond.expand(-1, 4, 3)                            # (200, 4, 3)
+        foot_positions = torch.where(
+            cond,
+            self.default_foot_pos,
+            self._compute_foot_positions(dt)
+        )
+        
+
+        # 2. Convert to local positions relative to each hip
+        local_foot_positions = foot_positions - self.hip_pos
+        local_foot_positions[:,0,0] -= 0.065
+        local_foot_positions[:,1,0] -= 0.065
+        local_foot_positions[:,2,0] -= 0.065
+        local_foot_positions[:,3,0] -= 0.065
+
+        # 3. Compute target joint angles using Analytical Inverse Kinematics
+        joint_positions = self._solve_analytical_ik(local_foot_positions)
+
+        return joint_positions
+
+    def reset(self, env_ids: Sequence[int] | None = None):
+        if env_ids is None:
+            env_ids = torch.arange(self.num_envs, device=self.device)
+        self.phase[env_ids] = 0.0
+        self.times[env_ids] = 0.0
+
+    def _compute_foot_positions(self, dt: float) -> torch.Tensor:
+        """Calculates target foot positions based on the current phase."""
+        # Update the global phase
+        self.phase += 2*torch.pi * self.frequency * dt
+
+        # Calculate5cycle phase for each foot (shape: [num_envs, 4])
+        cycle_phase = (self.phase + self.phase_shifts) % (2 * torch.pi)
+
+        # Determine if a foot is in swing or stance phase
+        is_swing_phase = cycle_phase < torch.pi
+
+        # Calculate target position deltas for swing phase
+        current_step_length = torch.clamp(self.times / self.step_length_ramp_up_time, 0.0, 1.0) * self.max_step_length_amp
+        x_swing = -current_step_length * torch.cos(cycle_phase)
+        z_swing = self.step_height_amp * torch.abs(torch.sin(cycle_phase))  # Always positive for lifting
+
+        # Calculate target position deltas for stance phase
+        x_stance = -current_step_length * torch.cos(cycle_phase)
+        z_stance = torch.zeros_like(x_stance)
+
+        # Combine using the condition
+        delta_x = torch.where(is_swing_phase, x_swing, x_stance)
+        delta_z = torch.where(is_swing_phase, z_swing, z_stance)
+
+        # Add the oscillator deltas to the default foot positions
+        foot_positions = self.default_foot_pos.clone()
+        foot_positions[..., 0] += delta_x  # Add to X-coordinate
+        foot_positions[..., 2] += delta_z  # Add to Z-coordinate
+
+        return foot_positions
+
+    def _solve_analytical_ik(self, foot_positions: torch.Tensor) -> torch.Tensor:
+        """Solves inverse kinematics for the Go2's legs."""
+        # Extract foot positions relative to hip joints
+        x = foot_positions[..., 0]  # Shape: (num_envs, 4)
+        y = foot_positions[..., 1]  # Shape: (num_envs, 4) - lateral offset
+        z = foot_positions[..., 2]  # Shape: (num_envs, 4)
+
+        # --- Hip Abduction/Adduction Joint (HAA) ---
+        # The HAA angle depends on the foot's position in the YZ plane.
+        # The angle is computed from the negative z-axis towards the y-axis.
+        hip_joint_angle = torch.deg2rad(torch.tensor([[0,0,0,0]], device="cuda")).repeat(x.shape[0], 1)
+
+        # --- Knee and Thigh IK in the leg's sagittal plane ---
+        # Use the true 3D distance from the hip to the foot (D) for the law of cosines.
+        D_sq = x**2 + y**2 + z**2
+
+        # Knee angle calculation using law of cosines
+        cos_theta2_arg = torch.clamp(
+            (self.thigh_length**2 + self.calf_length**2 - D_sq) / (2 * self.thigh_length * self.calf_length),
+            -1.0,
+            1.0,
+        )
+        theta2 = torch.acos(cos_theta2_arg)
+
+        # The Go2 URDF defines the calf joint angle relative to a straight leg (theta2 = pi, joint angle = 0).
+        calf_joint_angle = theta2 - torch.pi
+
+        # Thigh angle calculation
+        # Fix: Adjust alpha to ensure forward motion by using positive sqrt(y^2 + z^2).
+        alpha = torch.atan2(torch.sqrt(y**2 + z**2), x)  # Changed -torch.sqrt to +torch.sqrt
+        beta = torch.atan2(
+            self.calf_length * torch.sin(theta2),
+            self.thigh_length + self.calf_length * torch.cos(theta2)
+        )
+        thigh_joint_angle = alpha - beta # + torch.pi / 2 # Changed to alpha + beta to align with forward motion
+
+        # Assemble the final joint angles tensor in Isaac Lab's breadth-first order
+        target_joint_pos = torch.stack(
+            [
+                hip_joint_angle[:, 0],   # FL_HAA
+                hip_joint_angle[:, 1],   # FR_HAA
+                hip_joint_angle[:, 2],   # RL_HAA
+                hip_joint_angle[:, 3],   # RR_HAA
+                thigh_joint_angle[:, 0], # FL_HFE
+                thigh_joint_angle[:, 1], # FR_HFE
+                thigh_joint_angle[:, 2], # RL_HFE
+                thigh_joint_angle[:, 3], # RR_HFE
+                calf_joint_angle[:, 0],  # FL_KFE
+                calf_joint_angle[:, 1],  # FR_KFE
+                calf_joint_angle[:, 2],  # RL_KFE
+                calf_joint_angle[:, 3],  # RR_KFE
+            ],
+            dim=1,
+        )
+
+        return target_joint_pos
+
+class OscillatorActionManager(ActionManager):
+    def __init__(self, cfg: object, env: ManagerBasedEnv):
+        super().__init__(cfg, env)
+        self.gait_generator = OscillatorGaitGenerator(num_envs=self.num_envs, device=self.device)
+        
+    def reset(self, env_ids: Sequence[int] | None = None):
+        self.gait_generator.reset(env_ids=env_ids)
+        return super().reset(env_ids=env_ids)
+        
+    def process_action(self, action: torch.Tensor):
+        # overwrite actions with oscillator actions
+        action = self.gait_generator.step(self._env.step_dt)
+        if self.total_action_dim != action.shape[1]:
+            raise ValueError(f"Invalid action shape, expected: {self.total_action_dim}, received: {action.shape[1]}.")
+        # store the input actions
+        self._prev_action[:] = self._action
+        self._action[:] = action.to(self.device)
+
+        # split the actions and apply to each tensor
+        idx = 0
+        for term in self._terms.values():
+            term_actions = action[:, idx : idx + term.action_dim]
+            term.process_actions(term_actions)
+            idx += term.action_dim
+
+
 torch.pi = torch.acos(torch.zeros(1)).item() * 2
 import yaml
 import matplotlib.pyplot as plt

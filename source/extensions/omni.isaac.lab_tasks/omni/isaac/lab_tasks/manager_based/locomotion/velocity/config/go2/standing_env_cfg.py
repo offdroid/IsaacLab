@@ -92,15 +92,20 @@ class AMPUnitreeGo2StandingEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_terrain(self)
         parameters.set_rewards_standing_amp(self)
         parameters.set_standing_env_terminations(self)
+        parameters.standing_domain_randomization(self)
 
-        self.episode_length_s = 5.0
+        self.episode_length_s = 5.0 # This duration should be matched with the duration of the expert trajectory so that the style distributions can be equal. TODO reduce this to 3.0 again, and also reduce repeated frames at end of expert dataframes. See commit 6c0e6b10aa51ad72d0640e94c4c7158ce562aa06.
         self.scene.num_envs = 5480  # with DR: 2 * 4096; without DR: 5480
 
+        self.events.push_robot.interval_range_s = (2.0, 4.0) # TODO reduce to episode length
+        self.events.push_robot.params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}} # TODO increase
+        self.events.reset_gravity.interval_range_s = (2.0, 4.0)
+        
         rsi_params = {
             "reference_states": ["joints", "base"],
             "motion_files": [
-                # "datasets/fromVision_motions_DepthCam_standUp_feetZAmpl/stand_up_2431270000_amp.txt",
-                "datasets/fromVision_motions_DepthCam_obstacle/slow_1313807000_amp.txt",
+                "datasets/fromVision_motions_DepthCam_standUp_feetZAmpl/stand_up_2431270000_amp.txt",
+                "datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_minimal/slow_1313807000_amp.txt",
             ]
         }
         parameters.set_amp_settings(self, motion_folder = "datasets/fromVision_motions_DepthCam_standUp_feetZAmpl/*", **rsi_params)

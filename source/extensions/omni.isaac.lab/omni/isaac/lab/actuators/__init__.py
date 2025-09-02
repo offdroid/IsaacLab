@@ -29,10 +29,11 @@ from .actuator_cfg import (
     ActuatorNetMLPCfg,
     DCMotorCfg,
     DelayedPDActuatorCfg,
+    Delayed5GPDActuatorCfg,
     IdealPDActuatorCfg,
     ImplicitActuatorCfg,
     RemotizedPDActuatorCfg,
     DelayedDCMotorCfg
 )
 from .actuator_net import ActuatorNetLSTM, ActuatorNetMLP
-from .actuator_pd import DCMotor, DelayedPDActuator, IdealPDActuator, ImplicitActuator, RemotizedPDActuator, DelayedDCMotor
+from .actuator_pd import DCMotor, DelayedPDActuator, IdealPDActuator, ImplicitActuator, RemotizedPDActuator, DelayedDCMotor, Delayed5GPDActuator

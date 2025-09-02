@@ -12,6 +12,8 @@ from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm
 from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
 from omni.isaac.lab.managers import RewardTermCfg as RewTerm
 from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
+from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+
 
 
 from omni.isaac.lab_tasks.manager_based.navigation.mdp.rewards import (
@@ -252,6 +254,11 @@ def set_rewards_standing_amp(cfg):
     cfg.commands.base_velocity.ranges.lin_vel_x=(0.0, 0.0)
     cfg.commands.base_velocity.ranges.lin_vel_y=(0.0, 0.0)
     cfg.rewards.track_lin_vel_xy_exp.weight = 20
+    
+    cfg.rewards.dof_torques_l2.weight = -0.006 # -2.8
+    cfg.rewards.torque_limits.weight = -70 # -0.5
+    cfg.rewards.torque_limits_2.weight = -200 # -0.005
+    cfg.rewards.dof_acc_l2.weight = -5e-6
 
 
 def set_velocity_rewards_amp(cfg):
@@ -269,15 +276,48 @@ def set_velocity_rewards_amp(cfg):
     cfg.rewards.track_lin_vel_xy_exp.params["std"] = (
         0.22  # TODO should this be ang_vel?
     )
-
-    # cfg.rewards.feet_air_time.weight = 100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
+    
+    # cfg.rewards.feet_air_time.weight = (
+    #     100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
+    # )
     # cfg.rewards.flat_orientation_l2.weight = -25
     # cfg.rewards.feet_slide.weight = -5.0
-    # cfg.rewards.dof_torques_l2.weight = -0.006
-    # cfg.rewards.torque_limits.weight = -35
-    # cfg.rewards.torque_limits_2.weight = -100
+    cfg.rewards.dof_torques_l2.weight = -0.006
+    cfg.rewards.torque_limits.weight = -35
+    cfg.rewards.torque_limits_2.weight = -100
     # cfg.rewards.dof_acc_l2.weight = -5e-6
-    #
+    
+    # cfg.rewards.undesired_contacts_thigh.weight = -1.0
+    # cfg.rewards.undesired_contacts_calf.weight = -1.0
+    # cfg.rewards.contact_forces.weight = -1.0
+    
+def set_box_rewards_amp(cfg):
+    # disable rewards
+    for field in fields(cfg.rewards):
+        reward_obj = getattr(cfg.rewards, field.name)
+        # we need to check this because some reward terms might have been deleted previously depending on the environment and task
+        if reward_obj is not None:
+            reward_obj.weight = 0.0
+
+    # set only task reward
+    cfg.rewards.track_lin_vel_xy_exp.weight = 60
+    cfg.rewards.track_lin_vel_xy_exp.params["std"] = 0.22
+    cfg.rewards.track_ang_vel_z_exp.weight = 20
+    cfg.rewards.track_lin_vel_xy_exp.params["std"] = (
+        0.22  # TODO should this be ang_vel?
+    )
+    
+    assert False, "Rewards"
+    # cfg.rewards.feet_air_time.weight = (
+    #     100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
+    # )
+    # # cfg.rewards.flat_orientation_l2.weight = -25
+    # cfg.rewards.feet_slide.weight = -5.0
+    cfg.rewards.dof_torques_l2.weight = -0.006
+    cfg.rewards.torque_limits.weight = -35
+    cfg.rewards.torque_limits_2.weight = -100
+    # cfg.rewards.dof_acc_l2.weight = -5e-6
+    
     # cfg.rewards.undesired_contacts_thigh.weight = -1.0
     # cfg.rewards.undesired_contacts_calf.weight = -1.0
     # cfg.rewards.contact_forces.weight = -1.0
@@ -377,7 +417,7 @@ def set_box_env_cfg_cmds(cfg):
         debug_vis=cfg.commands.base_velocity.debug_vis,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-0.1, 0.1),
-            lin_vel_y=(0.4, 0.6),
+            lin_vel_y=(0.4, 0.8),
             ang_vel_z=(0, 0),
             heading=(
                 math.pi / 2, #- math.radians(20),
@@ -449,7 +489,7 @@ def set_box_env_cfg_reset_base(cfg):
                 # "y": (0.04, 0.06),
                 # "yaw": (math.pi / 2, math.pi / 2),
                 "x": (-0.5, 0.5),
-                "y": (-0.15, 0.15),
+                "y": (-0.25, 0.15),
                 "yaw": (math.pi / 2, math.pi / 2),
                 # "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
             }
@@ -469,13 +509,13 @@ def add_relative_position_on_stairs_observation(cfg):
 
 
 def add_relative_position_to_box_observation(cfg):
-    cfg.observations.policy.relative_position_to_box = ObsTerm(func=mdp.relative_position_to_box)
+    cfg.observations.policy.relative_position_to_box = ObsTerm(func=mdp.relative_position_to_box, noise=Unoise(n_min=-0.02, n_max=0.02))
 
 def add_stair_parameters_observation(cfg):
     cfg.observations.policy.stair_parameters = ObsTerm(func=mdp.stair_parameters)
 
 def add_box_parameters_observation(cfg):
-    cfg.observations.policy.box_parameters = ObsTerm(func=mdp.box_parameters)
+    cfg.observations.policy.box_parameters = ObsTerm(func=mdp.box_parameters, noise=Unoise(n_min=-0.01, n_max=0.01))
 
 
 def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwargs):
@@ -483,7 +523,9 @@ def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwa
 
     cfg.amp_motion_folder = motion_folder
     cfg.amp_motion_files = glob.glob(cfg.amp_motion_folder)
+    
 
+    use_rsi = kwargs.pop("use_rsi", True) # you can use this key to disable rsi
     params = {
         "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
         "device": cfg.sim.device,
@@ -492,12 +534,13 @@ def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwa
         "reference_states": ["joints", "base"],
     }
     params.update(kwargs)
-
+    
     # use reference state initialization
-    cfg.events.reset_robot_joints = None
-    cfg.events.reference_state_initialization = EventTerm(
-        func=mdp.reference_state_initialization, mode="reset", params=params
-    )
+    if use_rsi:
+        cfg.events.reset_robot_joints = None
+        cfg.events.reference_state_initialization = EventTerm(
+            func=mdp.reference_state_initialization, mode="reset", params=params
+        )
 
 
 # NOTE this function keeps track of DR params that were used to train previous policies. Consider this function legacy. It should only be used if you know what you are doing.
@@ -515,6 +558,11 @@ def previous_domain_randomization_params(cfg):
     cfg.events.reset_gravity = None
     cfg.events.actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
     cfg.events.actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
+    
+def standing_domain_randomization(cfg):
+    cfg.events.add_base_mass.params["mass_distribution_params"] = (-2.0, 2.0)
+    cfg.events.base_com.params["com_range"]["z"] = (-0.02, 0.04) # robot false to the bag - so higher COM in z should help
+    
 
 
 def disable_domain_randomization(cfg):
@@ -549,6 +597,42 @@ def disable_domain_randomization(cfg):
     cfg.disable_domain_randomization = True
 
     print("[INFO] Domain Randomization disabled. Note that you can probably train with much lower max_iterations compared to when using Domain Randomization.")
+
+    assert not cfg.terrain_type == "flat_noisy", "flat_noisy is only for Domain Randomization."
+    
+def zero_domain_randomization(cfg):
+    cfg.scene.robot.actuators["base_legs"].min_delay = 0
+    cfg.scene.robot.actuators["base_legs"].max_delay = 0
+    cfg.events.push_robot = None
+    cfg.events.add_base_mass.params["mass_distribution_params"] = (0.0, 0.0)
+    if cfg.events.reset_robot_joints is not None: # its None for AMP
+        cfg.events.reset_robot_joints.params["position_range"] = (1.0, 1.0)
+    cfg.events.reset_base.params = {
+        "pose_range": {"x": (0.0, 0.0), "y": (0.0, 0.0), "yaw": (0.0, 0.0)},
+        "velocity_range": {
+            "x": (-0.0, 0.0),
+            "y": (-0.0, 0.0),
+            "z": (-0.0, 0.0),
+            "roll": (-0.0, 0.0),
+            "pitch": (-0.0, 0.0),
+            "yaw": (-0.0, 0.0),
+        },
+    }
+
+    cfg.events.physics_material.params["static_friction_range"] = (0.8, 0.8)
+    cfg.events.physics_material.params["dynamic_friction_range"] = (0.6, 0.6)
+    cfg.events.physics_material.params["restitution_range"] = (0.0, 0.0)
+    cfg.events.randomize_link_mass = None
+    cfg.events.add_base_mass = None
+    cfg.events.actuator_gains = None
+    cfg.events.joint_limits = None
+    cfg.events.base_com = None
+    cfg.events.links_com = None
+    cfg.events.reset_gravity = None
+    
+    cfg.disable_domain_randomization = True
+
+    print("[INFO] Zero Domain Randomization. This setting is not meant for any DRL training.")
 
     assert not cfg.terrain_type == "flat_noisy", "flat_noisy is only for Domain Randomization."
 

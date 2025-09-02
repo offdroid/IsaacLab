@@ -94,6 +94,12 @@ class IdealPDActuatorCfg(ActuatorBaseCfg):
     """Configuration for an ideal PD actuator."""
 
     class_type: type = actuator_pd.IdealPDActuator
+    
+    saturation_effort: float = MISSING
+    """Peak motor force/torque of the electric DC motor (in N-m)."""
+    
+    clip_effort_factor: float = 1.0
+    """Factor at which to clip the applied effort in simulation. If set to None, no clipping is performed. Default in IsaacLab is 1.0"""
 
 
 @configclass
@@ -102,11 +108,7 @@ class DCMotorCfg(IdealPDActuatorCfg):
 
     class_type: type = actuator_pd.DCMotor
 
-    saturation_effort: float = MISSING
-    """Peak motor force/torque of the electric DC motor (in N-m)."""
-    
-    clip_effort_factor: float = 1.0
-    """Factor at which to clip the applied effort in simulation. If set to None, no clipping is performed. Default in IsaacLab is 1.0"""
+
 
 
 @configclass
@@ -170,6 +172,18 @@ class DelayedPDActuatorCfg(IdealPDActuatorCfg):
 
     max_delay: int = 0
     """Maximum number of physics time-steps with which the actuator command may be delayed. Defaults to 0."""
+    
+    
+@configclass
+class Delayed5GPDActuatorCfg(IdealPDActuatorCfg):
+    """Configuration for a delayed PD actuator."""
+    class_type: type = actuator_pd.Delayed5GPDActuator
+    
+    # Minimum possible delay in physics steps.
+    min_delay: int = 0
+    # The 'rate' for the exponential distribution. The average *additional* delay will be 1/rate.
+    # e.g., rate=0.25 -> avg additional delay of 4 steps -> total avg delay of 2+4=6 steps
+    delay_rate: float = 0.75 # with min_delay=0:0.19 did not work, 0.25 also not, 1.0 worked, 0.5 didnt work, 0.75 seemed to be the treshold of it still converges
     
 @configclass
 class DelayedDCMotorCfg(DCMotorCfg):

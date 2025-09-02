@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import torch
+from torch.distributions.exponential import Exponential
+from typing import Sequence
 import numpy as np
 import matplotlib.pyplot as plt
 from collections.abc import Sequence
@@ -20,6 +22,7 @@ if TYPE_CHECKING:
     from .actuator_cfg import (
         DCMotorCfg,
         DelayedPDActuatorCfg,
+        Delayed5GPDActuatorCfg,
         IdealPDActuatorCfg,
         ImplicitActuatorCfg,
         RemotizedPDActuatorCfg,
@@ -330,6 +333,150 @@ class DelayedPDActuator(IdealPDActuator):
         control_action.joint_velocities = self.velocities_delay_buffer.compute(control_action.joint_velocities)
         control_action.joint_efforts = self.efforts_delay_buffer.compute(control_action.joint_efforts)
         # compte actuator model
+        return super().compute(control_action, joint_pos, joint_vel)
+    
+    
+class Delayed5GPDActuator(IdealPDActuator):
+    """Ideal PD actuator with per-command stochastic delay.
+
+    This class simulates a network with variable latency. For each control command
+    sent at every physics step, a new delay is sampled from a shifted exponential
+    distribution. The command is then scheduled for application in a future step.
+
+    This model handles out-of-order command arrivals by always applying the most
+    recently issued command that is ready for execution.
+    """
+
+    cfg: Delayed5GPDActuatorCfg
+
+    def __init__(self, cfg: Delayed5GPDActuatorCfg, *args, **kwargs):
+        super().__init__(cfg, *args, **kwargs)
+        
+        # -- Internal state for managing dynamic delays --
+
+        # Calculate a safe maximum buffer size to handle the tail of the distribution.
+        # This covers ~99.99% of samples.
+        self.max_delay_steps = self.cfg.min_delay + int(9 / self.cfg.delay_rate)
+
+        # Step counter for simulation time
+        self.step_counter = torch.zeros(self._num_envs, dtype=torch.long, device=self._device)
+
+        # Buffers to store "in-flight" commands
+        # The size is [max_delay, num_envs, num_actions]
+        self._action_dim = 12
+        self.positions_buffer = torch.zeros(self.max_delay_steps, self._num_envs, self._action_dim, device=self._device)
+        self.velocities_buffer = torch.zeros(self.max_delay_steps, self._num_envs, self._action_dim, device=self._device)
+        self.efforts_buffer = torch.zeros(self.max_delay_steps, self._num_envs, self._action_dim, device=self._device)
+
+        # Buffer to store the simulation step when a command is scheduled to be released
+        self.release_step_buffer = torch.full((self.max_delay_steps, self._num_envs), float('inf'), device=self._device)
+        # Buffer to store the simulation step when a command was issued (to find the latest)
+        self.issue_step_buffer = torch.full((self.max_delay_steps, self._num_envs), -1, device=self._device)
+
+        # Store the last valid applied action, to use when no new command is ready
+        self.last_applied_pos = torch.zeros(self._num_envs, self._action_dim, device=self._device)
+        self.last_applied_vel = torch.zeros(self._num_envs, self._action_dim, device=self._device)
+        self.last_applied_effort = torch.zeros(self._num_envs, self._action_dim, device=self._device)
+        
+        # Exponential distribution for sampling delays
+        self.exp_dist = Exponential(rate=torch.tensor([self.cfg.delay_rate], device=self._device))
+
+    def reset(self, env_ids: Sequence[int]):
+        """Resets the internal state for the specified environments."""
+        super().reset(env_ids)
+        # Convert env_ids to a tensor for indexing
+        if isinstance(env_ids, slice):
+            env_ids = torch.arange(self._num_envs, device=self._device)[env_ids]
+        else:
+            env_ids = torch.tensor(env_ids, dtype=torch.long, device=self._device)
+
+        # Reset state for the selected environments
+        self.step_counter[env_ids] = 0
+        self.positions_buffer[:, env_ids] = 0
+        self.velocities_buffer[:, env_ids] = 0
+        self.efforts_buffer[:, env_ids] = 0
+        self.release_step_buffer[:, env_ids] = float('inf')
+        self.issue_step_buffer[:, env_ids] = -1
+        self.last_applied_pos[env_ids] = 0
+        self.last_applied_vel[env_ids] = 0
+        self.last_applied_effort[env_ids] = 0
+
+
+    def compute(
+        self, control_action: ArticulationActions, joint_pos: torch.Tensor, joint_vel: torch.Tensor
+    ) -> ArticulationActions:
+        # Create a tensor [0, 1, 2, ..., num_envs-1] for vectorized indexing
+        env_indices = torch.arange(self._num_envs, device=self._device)
+
+        # -- 1. Schedule the new incoming command (Vectorized) --
+
+        # Get the circular buffer index to write the new command to
+        write_indices = self.step_counter % self.max_delay_steps
+
+        # Sample additional delay from the exponential distribution
+        additional_delays = self.exp_dist.sample(sample_shape=(self._num_envs,)).squeeze(-1)
+
+        # Calculate total delay in steps and schedule the release time
+        total_delays = (self.cfg.min_delay + additional_delays).round().long()
+        release_steps = self.step_counter + total_delays
+
+        # Store the new command and its metadata in the buffers using advanced indexing
+        # This replaces the first for-loop by writing to all environments at once.
+        self.positions_buffer[write_indices, env_indices] = control_action.joint_positions
+        self.velocities_buffer[write_indices, env_indices] = control_action.joint_velocities
+        self.efforts_buffer[write_indices, env_indices] = control_action.joint_efforts
+        self.release_step_buffer[write_indices, env_indices] = release_steps.float()
+        self.issue_step_buffer[write_indices, env_indices] = self.step_counter
+
+        # -- 2. Find and select the command to apply for the current step (Vectorized) --
+
+        # Find all commands in the buffer that are ready to be released
+        is_ready_mask = self.release_step_buffer <= self.step_counter.unsqueeze(0)
+
+        # To avoid applying old commands, we only want the *latest* ready command.
+        # We set the issue step of not-ready commands to -1 so they are ignored by argmax.
+        valid_issue_steps = torch.where(is_ready_mask, self.issue_step_buffer, -1)
+
+        # Find the buffer index of the latest ready command for each environment
+        latest_ready_indices = torch.argmax(valid_issue_steps, dim=0)
+
+        # Check for which environments a valid command was found
+        env_has_ready_cmd = torch.any(is_ready_mask, dim=0)
+
+        # Gather the latest ready commands from the buffers using the found indices
+        retrieved_pos = self.positions_buffer[latest_ready_indices, env_indices]
+        retrieved_vel = self.velocities_buffer[latest_ready_indices, env_indices]
+        retrieved_effort = self.efforts_buffer[latest_ready_indices, env_indices]
+
+        # Use torch.where to select between the new command and the last applied one.
+        # This is a vectorized equivalent of the if-statement inside the second for-loop.
+        broadcast_mask = env_has_ready_cmd.unsqueeze(-1)
+        final_pos = torch.where(broadcast_mask, retrieved_pos, self.last_applied_pos)
+        final_vel = torch.where(broadcast_mask, retrieved_vel, self.last_applied_vel)
+        final_effort = torch.where(broadcast_mask, retrieved_effort, self.last_applied_effort)
+
+        # Invalidate the applied commands in the buffer to prevent re-application.
+        # We only do this for environments that had a ready command.
+        self.release_step_buffer[latest_ready_indices, env_indices] = torch.where(
+            env_has_ready_cmd, float('inf'), self.release_step_buffer[latest_ready_indices, env_indices]
+        )
+
+        # Update the last applied action
+        self.last_applied_pos = final_pos
+        self.last_applied_vel = final_vel
+        self.last_applied_effort = final_effort
+
+        # Update the output action with the delayed commands
+        control_action.joint_positions = final_pos
+        control_action.joint_velocities = final_vel
+        control_action.joint_efforts = final_effort
+
+        # -- 3. Advance time and compute actuator physics --
+
+        # Increment the step counter for the next iteration
+        self.step_counter += 1
+
+        # Compute the final actuator efforts using the (potentially delayed) action
         return super().compute(control_action, joint_pos, joint_vel)
     
 class DelayedDCMotor(DCMotor):

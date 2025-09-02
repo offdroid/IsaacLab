@@ -70,7 +70,7 @@ from omni.isaac.lab.utils.io import dump_pickle, dump_yaml
 import omni.isaac.lab_tasks  # noqa: F401
 from omni.isaac.lab_tasks.utils import get_checkpoint_path
 from omni.isaac.lab_tasks.utils.hydra import hydra_task_config
-from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper
+from omni.isaac.lab_tasks.utils.wrappers.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlVecEnvWrapper, export_policy_as_jit
 
 
 from actionManagerLatentActorMapping import get_vel_dependent_actor_latent_dim_for_action_manager_class
@@ -191,7 +191,15 @@ def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agen
 
     # close the simulator
     env.close()
-
+    
+    # save the policy
+    export_model_dir = os.path.join(os.path.dirname(log_dir), "exported")
+    export_policy_as_jit(
+        runner.alg.actor_critic,
+        runner.obs_normalizer,
+        path=export_model_dir,
+        filename="policy.pt",
+    )
 
 if __name__ == "__main__":
     # run the main function
