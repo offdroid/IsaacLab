@@ -9,6 +9,8 @@ import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+from omni.isaac.lab.utils.math import normalize, wrap_to_pi
+
 if TYPE_CHECKING:
     from . import noise_cfg
 
@@ -70,6 +72,33 @@ def uniform_noise(data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg) -> torch.T
         raise ValueError(f"Unknown operation in noise: {cfg.operation}")
 
 
+def uniform_quat_noise(
+    data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg
+) -> torch.Tensor:
+    """Applies a uniform noise to a given data set for quaternions, i.e., normalizes after noise application."""
+    return normalize(uniform_noise(data, cfg))
+
+
+def uniform_angle_noise(
+    data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg
+) -> torch.Tensor:
+    """Applies a uniform noise to a given data set for angles, i.e., wraps to pi after noise application."""
+    return wrap_to_pi(uniform_noise(data, cfg))
+
+
+def uniform_sinusodal_position_noise(
+    data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg
+) -> torch.Tensor:
+    """Applies a uniform noise to a given data set encoded with sinusoidal positional encoding"""
+    assert len(data.shape) == 2
+    assert data.shape[1] == 2
+    angle = torch.asin(data[:, 0])
+    data = uniform_noise(angle, cfg)
+    return torch.cat(
+        [torch.sin(data).unsqueeze(1), torch.cos(data.unsqueeze(-1))], dim=1
+    )
+
+
 def gaussian_noise(data: torch.Tensor, cfg: noise_cfg.GaussianNoiseCfg) -> torch.Tensor:
     """Applies a gaussian noise to a given data set.
 
@@ -106,7 +135,9 @@ def gaussian_noise(data: torch.Tensor, cfg: noise_cfg.GaussianNoiseCfg) -> torch
 class NoiseModel:
     """Base class for noise models."""
 
-    def __init__(self, noise_model_cfg: noise_cfg.NoiseModelCfg, num_envs: int, device: str):
+    def __init__(
+        self, noise_model_cfg: noise_cfg.NoiseModelCfg, num_envs: int, device: str
+    ):
         """Initialize the noise model.
 
         Args:
@@ -139,7 +170,9 @@ class NoiseModel:
         Returns:
             The data with the noise applied. Shape is the same as the input data.
         """
-        return self._noise_model_cfg.noise_cfg.func(data, self._noise_model_cfg.noise_cfg)
+        return self._noise_model_cfg.noise_cfg.func(
+            data, self._noise_model_cfg.noise_cfg
+        )
 
 
 class NoiseModelWithAdditiveBias(NoiseModel):
@@ -148,7 +181,12 @@ class NoiseModelWithAdditiveBias(NoiseModel):
     The bias term is sampled from a the specified distribution on reset.
     """
 
-    def __init__(self, noise_model_cfg: noise_cfg.NoiseModelWithAdditiveBiasCfg, num_envs: int, device: str):
+    def __init__(
+        self,
+        noise_model_cfg: noise_cfg.NoiseModelWithAdditiveBiasCfg,
+        num_envs: int,
+        device: str,
+    ):
         # initialize parent class
         super().__init__(noise_model_cfg, num_envs, device)
         # store the bias noise configuration
@@ -168,7 +206,9 @@ class NoiseModelWithAdditiveBias(NoiseModel):
         if env_ids is None:
             env_ids = slice(None)
         # reset the bias term
-        self._bias[env_ids] = self._bias_noise_cfg.func(self._bias[env_ids], self._bias_noise_cfg)
+        self._bias[env_ids] = self._bias_noise_cfg.func(
+            self._bias[env_ids], self._bias_noise_cfg
+        )
 
     def apply(self, data: torch.Tensor) -> torch.Tensor:
         """Apply bias noise to the data.

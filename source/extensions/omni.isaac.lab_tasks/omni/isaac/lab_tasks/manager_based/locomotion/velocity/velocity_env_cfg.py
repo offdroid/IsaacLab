@@ -97,7 +97,10 @@ class CommandsCfg:
 
     base_velocity = mdp.UniformVelocityCommandCfg(
         asset_name="robot",
-        resampling_time_range=(10.0, 10.0), # Always keep that exactly 10.0, otherwise metric computation will be wrong. (It is wrong anyways if episodes terminate prematurely!)
+        resampling_time_range=(
+            10.0,
+            10.0,
+        ),  # Always keep that exactly 10.0, otherwise metric computation will be wrong. (It is wrong anyways if episodes terminate prematurely!)
         rel_standing_envs=0.02,
         rel_heading_envs=1.0,
         heading_command=False,
@@ -370,15 +373,24 @@ class EventCfg:
 @configclass
 class RewardsCfg:
     """Reward terms for the MDP."""
-    
+
     # NOTE all rewards are deactivated here and need to be activated in inheriting confings
-    
+
     # -- task
     track_lin_vel_xy_exp = RewTerm(
-        func=mdp.track_lin_vel_xy_exp, weight=0.0, params={"command_name": "base_velocity", "std": math.sqrt(0.25)}
+        func=mdp.track_lin_vel_xy_exp,
+        weight=0.0,
+        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
     track_ang_vel_z_exp = RewTerm(
-        func=mdp.track_ang_vel_z_world_exp_3d, weight=0.5, params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+        func=mdp.track_ang_vel_z_world_exp_3d,
+        weight=0.5,
+        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
+    )
+    track_lin_vel_stairs_exp = RewTerm(
+        func=mdp.track_lin_vel_stairs_exp,
+        weight=0.0,
+        params={"command_name": "base_velocity", "std": math.sqrt(0.25)},
     )
     # -- penalties
     lin_vel_z_l2 = RewTerm(func=mdp.lin_vel_z_l2, weight=-0.0)
@@ -405,7 +417,7 @@ class RewardsCfg:
         weight=-0.0,
         params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*calf"), "threshold": 1.0},
     )
-    
+
     contact_forces = RewTerm(
         func=mdp.contact_forces,
         weight=-0.0,
@@ -492,6 +504,8 @@ class RewardsCfg:
     head_height_l2 = RewTerm(func=mdp.head_height_l2, weight=-0.0)
     feet_height_l2 = RewTerm(func=mdp.feet_height_l2, weight=-0.0)
 
+    termination_penalty = RewTerm(func=mdp.is_terminated, weight=0.0)
+
 
 @configclass
 class TerminationsCfg:
@@ -505,34 +519,6 @@ class TerminationsCfg:
             "threshold": 1.0,
         },
     )
-    calf_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*calf"),
-            "threshold": 500.0,
-        },
-    )
-    thigh_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*thigh"),
-            "threshold": 50.0,
-        },
-    )
-    lower_head_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names="Head_lower"),
-            "threshold": 1.0,
-        },
-    )
-    hip_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={
-            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_hip"),
-            "threshold": 1.0,
-        },
-    )
     bad_orientation = DoneTerm(
         func=mdp.bad_orientation, params={"limit_angle": torch.pi / 2}
     )
@@ -541,10 +527,10 @@ class TerminationsCfg:
     #     func=mdp.joint_pos_out_of_limit,
     #     params={"asset_cfg": SceneEntityCfg("robot")}
     # )
-    root_height_below_minimum = DoneTerm(
-        func=root_height_below_minimum,
-        params={"asset_cfg": SceneEntityCfg("robot"), "minimum_height": 0.15},
-    )
+    # root_height_below_minimum = DoneTerm(
+    #     func=root_height_below_minimum,
+    #     params={"asset_cfg": SceneEntityCfg("robot"), "minimum_height": 0.25},
+    # )
     # bad_orientation = DoneTerm(
     #     func=bad_orientation,
     #     params={"asset_cfg": SceneEntityCfg("robot"), "limit_angle": 0.4},

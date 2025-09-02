@@ -120,6 +120,21 @@ class RecordJposEpisodeTargetVelocity(TargetDistribution):
             "You most likely want to set yaw to 0 for evaluation."
         )
 
+@dataclass
+class RecordState(TargetDistribution):
+    eval_metric_subfolder: str = "RecordStateEvaluation"
+    record_episode_jpos = False
+
+    play_episodes_per_env = int(1)
+    num_envs = 20
+
+    def run_checks(self, **kwargs):
+        super().run_checks(**kwargs)
+
+        assert kwargs["args_cli"].yaw == 0, (
+            "You most likely want to set yaw to 0 for evaluation."
+        )
+
 
 @dataclass
 class AgentExpertDistance(TargetDistribution):

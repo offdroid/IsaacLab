@@ -14,9 +14,18 @@ from omni.isaac.lab.managers import RewardTermCfg as RewTerm
 from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
 
 
-from omni.isaac.lab_tasks.manager_based.navigation.mdp.rewards import position_command_error_tanh, heading_command_error_abs
+from omni.isaac.lab_tasks.manager_based.navigation.mdp.rewards import (
+    position_command_error_tanh,
+    heading_command_error_abs,
+)
 
-from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
+from omni.isaac.lab.utils.noise import (
+    AdditiveUniformNoiseCfg as Unoise,
+    UniformSinusodalPositionNoiseCfg as USinPosNoise,
+    UniformAngleNoiseCfg as UAngleNoise,
+)
+from omni.isaac.lab.utils.modifiers import ModifierCfg, sinusoidal_positional_encoding
+
 
 ##
 # Pre-defined configs
@@ -41,7 +50,49 @@ def set_play_settings_rough(cfg):
     if cfg.scene.terrain.terrain_generator is not None:
         cfg.scene.terrain.terrain_generator.num_rows = 5
         cfg.scene.terrain.terrain_generator.num_cols = 5
-        cfg.scene.terrain.terrain_generator.curriculum = False
+        if cfg.scene.terrain.terrain_generator is not None:
+            cfg.scene.terrain.terrain_generator.curriculum = False
+
+    cfg.events.reset_base.params = {
+        "pose_range": {
+            "x": (-0.5, 0.5),
+            "y": (-0.5, 0.5),
+            "yaw": (math.pi / 2, math.pi / 2),
+        },
+        "velocity_range": {
+            "x": (-0.0, 0.0),
+            "y": (-0.0, 0.0),
+            "z": (-0.0, 0.0),
+            "roll": (-0.0, 0.0),
+            "pitch": (-0.0, 0.0),
+            "yaw": (-0.0, 0.0),
+        },
+    }
+
+
+# TODO: IMPLEMENT!!
+# class modify_reward_weight(ManagerTermBase):
+#     """Curriculum that modifies the reward weight based on a step-wise schedule."""
+#
+#     def __init__(self, cfg: CurriculumTermCfg, env: ManagerBasedRLEnv):
+#         super().__init__(cfg, env)
+#
+#         # obtain term configuration
+#         term_name = cfg.params["term_name"]
+#         self._term_cfg = env.reward_manager.get_term_cfg(term_name)
+#
+#     def __call__(
+#         self,
+#         env: ManagerBasedRLEnv,
+#         env_ids: Sequence[int],
+#         term_name: str,
+#         num_steps: int,
+#     ) -> float:
+#         # update term settings
+#         if env.common_step_counter > num_steps:
+#             env.command_manager.set_term_cfg(term_name, self._term_cfg)
+#
+#         return self._term_cfg
 
 
 def set_curriculum(cfg, enable: bool):
@@ -58,7 +109,14 @@ def set_curriculum(cfg, enable: bool):
         )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = None
 
-        cfg.curriculum = None
+        # cfg.curriculum.sparse_reward_schedule = CurrTerm(
+        #     func=modify_reward_weight,
+        #     params={
+        #         "term_name": "sparse_reward",
+        #         "num_steps": 10_000,
+        #     },
+        # )
+        # cfg.curriculum = None
         # cfg.curriculum.epsiode_length = CurrTerm(
         #     func=mdp.modify_env_param,
         #     params={
@@ -81,18 +139,9 @@ def set_curriculum(cfg, enable: bool):
         )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
-def resample_epsiode_length(
-    env, env_id, data
-):
-    print(data)
-    print("common_step_counter", env.common_step_counter)
-    if hasattr(env.cfg, "episode_length_s"):
-        print("episode_length_s", env.cfg.episode_length_s)
 
 def resample_epsiode_length(env, env_id, data):
     # data is the old episode_length_s
-    # print("common_step_counter =", env.common_step_counter, "; data =", data)
-
     lower_cap = 0.05
     cap = 20.0
     k = 0.8
@@ -102,8 +151,6 @@ def resample_epsiode_length(env, env_id, data):
     if data != new_len:
         return max(lower_cap, new_len)
     return mdp.modify_env_param.NO_CHANGE
-
-        
 
 
 def set_terrain(cfg):
@@ -116,9 +163,9 @@ def set_terrain(cfg):
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "rough":
-        assert (
-            cfg.scene.terrain.terrain_generator == ROUGH_TERRAINS_CFG
-        ), "Expected ROUGH_TERRAINS_CFG as default terrain generator."
+        assert cfg.scene.terrain.terrain_generator == ROUGH_TERRAINS_CFG, (
+            "Expected ROUGH_TERRAINS_CFG as default terrain generator."
+        )
         # scale down the terrains because the robot is small
         cfg.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (
             0.025,
@@ -152,6 +199,11 @@ def set_terrain(cfg):
         raise ValueError(f"Unknown terrain type: {cfg.terrain_type}.")
 
 
+def set_rewards_stairs_vertical(cfg):
+    # cfg.rewards.base_z_vel.weight = 25.0
+    cfg.rewards.base_z_stairs_slope.weight = 100.0
+
+
 def set_rewards_simple(cfg):
     # disable rewards
     for field in fields(cfg.rewards):
@@ -164,16 +216,20 @@ def set_rewards_simple(cfg):
     cfg.rewards.track_lin_vel_xy_exp.params["std"] = 0.5
     cfg.rewards.track_ang_vel_z_exp.params["std"] = 0.5
     cfg.rewards.track_lin_vel_xy_exp.weight = 3.25  # was 1.5 before adding actuator delay; was 2.5 before increasing actuator delay 1 -> 4
+    cfg.rewards.track_lin_vel_stairs_exp.params["std"] = 0.5
+    cfg.rewards.track_lin_vel_stairs_exp.weight = 0.0  # was 1.5 before adding actuator delay; was 2.5 before increasing actuator delay 1 -> 4
     cfg.rewards.track_ang_vel_z_exp.weight = (
         1.5  # was 0.75 before adding actuator delay
     )
+    cfg.rewards.termination_penalty.weight = -200.0
+    
 
 def set_rewards_standing(cfg):
     # disable rewards
     for field in fields(cfg.rewards):
         reward_obj = getattr(cfg.rewards, field.name)
         reward_obj.weight = 0.0
-        
+
     cfg.rewards.head_height_l2.weight = 1.0
     cfg.rewards.feet_height_l2.weight = 1.0
     
@@ -213,20 +269,18 @@ def set_velocity_rewards_amp(cfg):
     cfg.rewards.track_lin_vel_xy_exp.params["std"] = (
         0.22  # TODO should this be ang_vel?
     )
-    
-    cfg.rewards.feet_air_time.weight = (
-        100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
-    )
-    cfg.rewards.flat_orientation_l2.weight = -25
-    cfg.rewards.feet_slide.weight = -5.0
-    cfg.rewards.dof_torques_l2.weight = -0.006
-    cfg.rewards.torque_limits.weight = -35
-    cfg.rewards.torque_limits_2.weight = -100
-    cfg.rewards.dof_acc_l2.weight = -5e-6
-    
-    cfg.rewards.undesired_contacts_thigh.weight = -1.0
-    cfg.rewards.undesired_contacts_calf.weight = -1.0
-    cfg.rewards.contact_forces.weight = -1.0
+
+    # cfg.rewards.feet_air_time.weight = 100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
+    # cfg.rewards.flat_orientation_l2.weight = -25
+    # cfg.rewards.feet_slide.weight = -5.0
+    # cfg.rewards.dof_torques_l2.weight = -0.006
+    # cfg.rewards.torque_limits.weight = -35
+    # cfg.rewards.torque_limits_2.weight = -100
+    # cfg.rewards.dof_acc_l2.weight = -5e-6
+    #
+    # cfg.rewards.undesired_contacts_thigh.weight = -1.0
+    # cfg.rewards.undesired_contacts_calf.weight = -1.0
+    # cfg.rewards.contact_forces.weight = -1.0
 
 
 def set_pose2d_rewards_amp(cfg):
@@ -401,7 +455,18 @@ def set_box_env_cfg_reset_base(cfg):
             }
 
 def add_relative_position_on_stairs_observation(cfg):
-    cfg.observations.policy.relative_position_on_stairs = ObsTerm(func=mdp.relative_position_on_stairs)
+    cfg.observations.policy.relative_position = ObsTerm(
+        func=mdp.relative_position_on_stairs,
+        noise=USinPosNoise(n_min=-0.1, n_max=0.1),
+    )
+    cfg.observations.policy.yaw = ObsTerm(
+        func=mdp.yaw,
+        noise=USinPosNoise(n_min=-0.1 * 2 * math.pi, n_max=0.1 * 2 * math.pi),
+    )
+    cfg.observations.policy.is_on_stairs = ObsTerm(
+        func=mdp.is_on_stairs,
+    )
+
 
 def add_relative_position_to_box_observation(cfg):
     cfg.observations.policy.relative_position_to_box = ObsTerm(func=mdp.relative_position_to_box)
@@ -500,4 +565,38 @@ def set_standing_env_terminations(cfg):
     cfg.terminations.root_height = DoneTerm(
         func=mdp.root_height_below_minimum,
         params={"minimum_height": 0.15},
+    )
+
+
+def set_stairs_env_terminations(cfg):
+    cfg.terminations.calf_contact = DoneTerm(
+        func=mdp.illegal_contact,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*calf"),
+            "threshold": 1.0,
+        },
+    )
+    cfg.terminations.thigh_contact = DoneTerm(
+        func=mdp.illegal_contact,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*thigh"),
+            "threshold": 1.0,
+        },
+    )
+    cfg.terminations.lower_head_contact = DoneTerm(
+        func=mdp.illegal_contact,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names="Head_lower"),
+            "threshold": 1.0,
+        },
+    )
+    cfg.terminations.hip_contact = DoneTerm(
+        func=mdp.illegal_contact,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_hip"),
+            "threshold": 1.0,
+        },
+    )
+    cfg.terminations.bad_orientation = DoneTerm(
+        func=mdp.bad_orientation, params={"limit_angle": torch.pi / 3}
     )

@@ -62,4 +62,4 @@ from .modifier import Integrator
 from .modifier_cfg import IntegratorCfg
 
 # isort: on
-from .modifier import bias, clip, scale
+from .modifier import bias, clip, scale, sinusoidal_positional_encoding

@@ -14,6 +14,7 @@ from __future__ import annotations
 import torch
 from typing import TYPE_CHECKING
 
+from omni.isaac.lab.assets import RigidObject, RigidObjectCfg
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.sensors import ContactSensor
 from omni.isaac.lab.utils.math import quat_rotate_inverse, yaw_quat
@@ -80,6 +81,79 @@ def feet_slide(env, sensor_cfg: SceneEntityCfg, asset_cfg: SceneEntityCfg = Scen
     body_vel = asset.data.body_lin_vel_w[:, sensor_cfg.body_ids, :2]
     reward = torch.sum(body_vel.norm(dim=-1) * contacts, dim=1)
     return reward
+
+
+# def track_lin_vel_z_exp(
+#     env,
+#     std: float,
+#     command_name: str,
+#     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+# ) -> torch.Tensor:
+#     # extract the used quantities (to enable type-hinting)
+#     asset = env.scene[asset_cfg.name]
+#     rows = env.scene.terrain.terrain_levels
+#     cols = env.scene.terrain.terrain_types
+#     slope = (
+#         env.scene.terrain.terrain_params["step_height"][rows, cols]
+#         / env.scene.terrain.terrain_params["step_width"][rows, cols]
+#     )
+#
+#     v_target_z = slope * torch.norm(
+#         env.command_manager.get_command(command_name)[:, :2], p=2, dim=-1
+#     )
+#     lin_vel_error = torch.square(v_target_z - asset.data.root_lin_vel_w[:, 2])
+#     return torch.exp(-lin_vel_error / std**2)
+
+
+def track_lin_vel_stairs_exp(
+    env,
+    std: float,
+    command_name: str,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    # extract the used quantities (to enable type-hinting)
+    asset = env.scene[asset_cfg.name]
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+    slope = (
+        env.scene.terrain.terrain_params["step_height"][rows, cols]
+        / env.scene.terrain.terrain_params["step_width"][rows, cols]
+    )
+    root_pos_y_absolute = asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
+    y_position_relative = (
+        root_pos_y_absolute
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].y_coordinate_origin_relative_to_first_stair_step
+    )
+    stairs_end = (
+        env.scene.terrain.terrain_params["num_steps"][rows, cols]
+        * env.scene.terrain.terrain_params["step_width"][rows, cols]
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].y_coordinate_origin_relative_to_first_stair_step
+    )
+    target_height = 0.3
+    is_on_stairs = torch.logical_and(
+        -target_height / slope <= y_position_relative,  # ,
+        y_position_relative <= stairs_end + target_height / slope,  # ,
+    )
+
+    # vel_yaw = quat_rotate_inverse(
+    #     yaw_quat(asset.data.root_quat_w), asset.data.root_lin_vel_w[:, :3]
+    # )
+    command = env.command_manager.get_command(command_name)[:, :3]
+    command[is_on_stairs, 2] = (slope * torch.norm(command[:, :2], p=2, dim=-1))[
+        is_on_stairs
+    ]
+    v = asset.data.root_lin_vel_w[:, :3]
+    command[:, 2] *= 3
+    v[:, 2] *= 3
+    lin_vel_error = torch.sum(
+        torch.square(command[:, :3] - v),
+        dim=1,
+    )
+    return torch.exp(-lin_vel_error / std**2)
 
 
 def track_lin_vel_xy_yaw_frame_exp(
@@ -162,3 +236,115 @@ def foot_clearance_reward(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Sc
     clearance_reward = height_error * foot_leteral_vel
 
     return torch.sum(clearance_reward, dim=1)
+
+
+def base_height(
+    env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+):
+    asset: RigidObject = env.scene[asset_cfg.name]
+    z = asset.data.root_state_w[:, 2]
+    return z
+
+
+def base_z_vel(
+    env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+):
+    asset: RigidObject = env.scene[asset_cfg.name]
+    z_vel = asset.data.root_state_w[:, 3 + 4 + 2]
+    # TODO: Limit to either only be active during the stairs section
+    # or in general to be within limits / around the necessary speed based on the target command
+    return torch.clamp(
+        z_vel,
+        torch.zeros((), device=z_vel.device),
+        torch.tensor(0.144, device=z_vel.device),
+    )
+
+
+def base_z_at_stairs(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    target_height: float = 0.3,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+):
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+    stairs_end = (
+        env.scene.terrain.terrain_params["num_steps"][rows, cols]
+        * env.scene.terrain.terrain_params["step_width"][rows, cols]
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].y_coordinate_origin_relative_to_first_stair_step
+    )
+
+    slope = (
+        env.scene.terrain.terrain_params["step_height"][rows, cols]
+        / env.scene.terrain.terrain_params["step_width"][rows, cols]
+    )
+    root_pos_y_absolute = asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
+    y_position_relative = (
+        root_pos_y_absolute
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].y_coordinate_origin_relative_to_first_stair_step
+    )
+    max_height = (
+        env.scene.terrain.terrain_params["num_steps"][rows, cols]
+        * env.scene.terrain.terrain_params["step_height"][rows, cols]
+    )
+
+    # Stairs start at 0 of y_position_relative
+    y_target = (y_position_relative * slope) + target_height
+    # print("y target", y_target)
+    # print("y", asset.data.root_state_w[:, 2])
+    # print()
+    y_target = torch.clamp(
+        y_target,
+        torch.tensor(target_height, device=y_target.device),
+        max_height + target_height,
+    )
+
+    # TODO: USE TANH SOMEHOW
+    # torch.tanh(y_target, )
+
+    # print("y_position_relative", y_position_relative)
+    # print("offset", y_position_relative - target_height / slope)
+
+    # Use the root of the new slope for the on stairs direction.
+    # TODO: What if we interpolate linearly?
+    is_on_stairs = torch.logical_and(
+        y_position_relative - target_height / slope > 0,
+        y_position_relative < stairs_end,
+    )
+    before_stairs = y_position_relative - target_height / slope > 0
+    after_stairs = y_position_relative < stairs_end
+
+    # Target speed in xy plane
+    v_target_xy = env.command_manager.get_command(command_name)[:, :2]
+    # Current velocity alongisde z-axis
+    v_z = asset.data.root_state_w[:, 2]
+
+    # y_target[~before_stairs] = target_height
+    # y_target[~after_stairs] = (target_height + max_height)[~after_stairs]
+
+    v_target_z = slope * torch.norm(v_target_xy, p=2, dim=-1)
+
+    delta_1 = -torch.square(v_target_z - v_z)
+    delta_2 = -2 * torch.square(v_z)
+
+    return torch.where(v_z >= 0.0, delta_1, delta_2)
+    # print(torch.max(error))
+    # error[~is_on_stairs] = 0.03
+
+    # Because of tanh's strict monotonicity greater values are ignored
+    # target_error_for_99percent = 0.05  # [in m]
+    # error = (
+    #     torch.tanh(
+    #         (y_target - asset.data.root_state_w[:, 2])
+    #         * 2.646
+    #         / target_error_for_99percent
+    #     )
+    #     * is_on_stairs
+    # )
+    return -error

@@ -31,7 +31,38 @@ from omni.isaac.lab.terrains import TerrainImporter
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedEnv
 
-from rsl_rl.datasets.motion_loader import AMPLoader
+
+recording_path = "/home/filip/Documents/oil2/logs/rsl_rl/unitree_go2_Stairs/2025-08-22_17-25-32_complex_curr_SEED_1/RecordStateEvaluation/recording.th"
+
+
+class RecordingReader:
+    def __init__(self, path: str, num_envs: int) -> None:
+        self._root_state_w, self._jpos, self._jvel = torch.load(path)
+
+        # idxs = [0]
+        # self._root_state_w=self._root_state_w[:, idxs]
+        # self._jpos=self._jpos[:, idxs]
+        # self._jvel= self._jvel[:, idxs]
+
+        self._num_t = self._root_state_w.size()[0]
+
+    def reroll_trajectories(self, n: int):
+        assert isinstance(n, int)
+        assert n >= 0
+        self._trajs = torch.randint(self._root_state_w.size()[1], (n,))
+
+    def root_state_w(self, idx):
+        return self._root_state_w[idx, self._trajs, :]
+
+    def jpos(self, idx):
+        return self._jpos[idx, self._trajs, :]
+
+    def jvel(self, idx):
+        return self._jvel[idx, self._trajs, :]
+
+    @property
+    def num_frames(self):
+        return self._num_t
 
 
 class reference_state_initialization(ManagerTermBase):
@@ -57,21 +88,22 @@ class reference_state_initialization(ManagerTermBase):
                 f"Randomization term 'randomize_rigid_body_material' not supported for asset: '{self.asset_cfg.name}'"
                 f" with type: '{type(self.asset)}'."
             )
-        self.amp_loader = AMPLoader(
-            motion_files=cfg.params.get("motion_files", None),
-            device=cfg.params.get("device", "cuda"),
-            time_between_frames=cfg.params.get("time_between_frames", None),
-            transform_root_trajectory=True,
-            preload_transitions=False,
-            augment_with_mirror=False,
-        )
+        # self.amp_loader = AMPLoader(
+        #     motion_files=cfg.params.get("motion_files", None),
+        #     device=cfg.params.get("device", "cuda"),
+        #     time_between_frames=cfg.params.get("time_between_frames", None),
+        #     transform_root_trajectory=True,
+        #     preload_transitions=False,
+        #     augment_with_mirror=False,
+        # )
+        self.motion_data = RecordingReader(recording_path, num_envs=1)
 
         self.reference_states = cfg.params.get(
             "reference_states", ["joints"]
         )  # by default we do only care about joint states for reference init
 
-        self._sampled_traj_ids = np.zeros(env.scene.num_envs, dtype=np.int64)
-        self._sampled_times = np.zeros(env.scene.num_envs, dtype=np.double)
+        # self._sampled_traj_ids = np.zeros(env.scene.num_envs, dtype=np.int64)
+        # self._sampled_times = np.zeros(env.scene.num_envs, dtype=np.double)
 
     def __call__(
         self,
@@ -87,41 +119,55 @@ class reference_state_initialization(ManagerTermBase):
         reference_trajectory_offset: torch.Tensor | None = None,
         reference_trajectory_scaling: torch.Tensor | None = None,
     ):
-
         # resolve environment ids
         if env_ids is None:
             env_ids = torch.arange(env.scene.num_envs, device=device)
 
-        assert not self.amp_loader.preload_transitions
-        frames, traj_ids, times = self.amp_loader.get_full_frame_batch(
-            len(env_ids), return_sampled_ids=True
-        )
-        self._sampled_traj_ids[env_ids.cpu()] = traj_ids
-        self._sampled_times[env_ids.cpu()] = times
+        mask = torch.rand(env_ids.shape) <= 0.5
+        env_ids = env_ids[mask]
+
+        # assert not self.amp_loader.preload_transitions
+        # frames, traj_ids, times = self.amp_loader.get_full_frame_batch(
+        #     len(env_ids), return_sampled_ids=True
+        # )
+        # self._sampled_traj_ids[env_ids.cpu()] = traj_ids
+        # self._sampled_times[env_ids.cpu()] = times
 
         # reference phase initialization for ResidualRL phases
         # TODO check if phase reset yields correcto obs in manager_base_rl_env
-        if env.cfg.action_manager_class in ["ResidualRLActionManager"]:
-            reference_phases = (
-                (
-                    2
-                    * torch.pi
-                    * torch.tensor(times, device=device)
-                    / torch.tensor(self.amp_loader.trajectory_lens, device=device)
-                )
-                .float()
-                .unsqueeze(-1)
-            )
-            assert (reference_phases >= 0).all() and (
-                reference_phases <= 2 * torch.pi
-            ).all(), "Error: Some reference phases are outside the range [0, 2pi]."
+        # if env.cfg.action_manager_class in ["ResidualRLActionManager"]:
+        #     reference_phases = (
+        #         (
+        #             2
+        #             * torch.pi
+        #             * torch.tensor(times, device=device)
+        #             / torch.tensor(self.amp_loader.trajectory_lens, device=device)
+        #         )
+        #         .float()
+        #         .unsqueeze(-1)
+        #     )
+        #     assert (reference_phases >= 0).all() and (
+        #         reference_phases <= 2 * torch.pi
+        #     ).all(), "Error: Some reference phases are outside the range [0, 2pi]."
+        #
+        #     env.action_manager.phases[env_ids] = reference_phases
+        max_frame = (env.common_step_counter / env.num_envs * 1) * (
+            self.motion_data.num_frames - 1
+        )
+        max_frame = max(1, min(max_frame + 10, self.motion_data.num_frames - 1))
+        max_frame = int(max_frame)
+        # print("max_frame", max_frame)
+        # max_frame = self.motion_data.num_frames - 1
+        frames = torch.randint(low=9, high=max_frame, size=(len(env_ids),))
 
-            env.action_manager.phases[env_ids] = reference_phases
+        self.motion_data.reroll_trajectories(len(env_ids))
 
         if "joints" in self.reference_states:
+            joint_pos = self.motion_data.jpos(frames).cuda().squeeze(1)
+            joint_vel = self.motion_data.jvel(frames).cuda().squeeze(1)
 
-            joint_pos = AMPLoader.get_joint_pose_batch(frames)
-            joint_vel = AMPLoader.get_joint_vel_batch(frames)
+            # joint_pos = AMPLoader.get_joint_pose_batch(frames)
+            # joint_vel = AMPLoader.get_joint_vel_batch(frames)
 
             # check if joint position limits are reached
             joint_pos_limits = self.asset.data.soft_joint_pos_limits[env_ids]
@@ -151,44 +197,50 @@ class reference_state_initialization(ManagerTermBase):
                 joint_vel = torch.zeros_like(joint_vel)
 
             # set into the physics simulation
-            self.asset.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+            # self.asset.write_joint_state_to_sim(joint_pos, joint_vel, env_ids=env_ids)
+            self.asset.write_joint_state_to_sim(
+                joint_pos, torch.zeros_like(joint_vel), env_ids=env_ids
+            )
 
         # NOTE this pos initialization should depend on terrain levels in the future to avoid floating above terrain or collision with terrain.
         if "base" in self.reference_states:
-            base_pos = AMPLoader.get_root_pos_batch(frames)
-            base_rot = AMPLoader.get_root_rot_batch(frames)
+            # base_pos = AMPLoader.get_root_pos_batch(frames)
+            # base_rot = AMPLoader.get_root_rot_batch(frames)
 
-            if True:
-                print("[WARN] Applying rotation fix to reference state for RSI.")
-                import math
+            # if True:
+            #     print("[WARN] Applying rotation fix to reference state for RSI.")
+            #     import math
+            #
+            #     roll90 = math_utils.quat_from_euler_xyz(
+            #         roll=torch.tensor(-math.pi / 2, device=base_rot.device),
+            #         pitch=torch.tensor(0.0, device=base_rot.device),
+            #         yaw=torch.tensor(math.pi / 2, device=base_rot.device),
+            #     )
+            #     roll90 = roll90.expand(base_rot.shape[0], -1)
+            #     base_rot = math_utils.quat_mul(roll90, base_rot)
 
-                roll90 = math_utils.quat_from_euler_xyz(
-                    roll=torch.tensor(-math.pi / 2, device=base_rot.device),
-                    pitch=torch.tensor(0.0, device=base_rot.device),
-                    yaw=torch.tensor(math.pi / 2, device=base_rot.device),
-                )
-                roll90 = roll90.expand(base_rot.shape[0], -1)
-                base_rot = math_utils.quat_mul(roll90, base_rot)
-
-            base_vel = AMPLoader.get_linear_vel_batch(frames)
-            base_ang_vel = AMPLoader.get_angular_vel_batch(
-                frames
-            )  # TODO this is zero as it is not contained in retargeting data at the moment
+            # base_vel = AMPLoader.get_linear_vel_batch(frames)
+            # base_ang_vel = AMPLoader.get_angular_vel_batch(
+            #     frames
+            # )  # TODO this is zero as it is not contained in retargeting data at the moment
 
             # Combine new root pose
-            root_state = torch.cat(
-                [
-                    base_pos + env.scene.env_origins[env_ids],
-                    base_rot,
-                    base_vel,  # torch.zeros_like(base_vel),
-                    torch.zeros_like(
-                        base_ang_vel
-                    ),  # TODO is not included in retargeted data for now
-                ],
-                dim=-1,
-            )
+            # root_state = torch.cat(
+            #     [
+            #         base_pos + env.scene.env_origins[env_ids],
+            #         base_rot,
+            #         base_vel,  # torch.zeros_like(base_vel),
+            #         torch.zeros_like(
+            #             base_ang_vel
+            #         ),  # TODO is not included in retargeted data for now
+            #     ],
+            #     dim=-1,
+            # )
+            root_states = self.motion_data.root_state_w(frames).cuda().squeeze(1)
+            root_states[:, 0:3] += env.scene.env_origins[env_ids]
+            # root_states[:, 7:] = 0.0
 
-            self.asset.write_root_state_to_sim(root_state, env_ids=env_ids)
+            self.asset.write_root_state_to_sim(root_states, env_ids=env_ids)
 
 
 class randomize_rigid_body_material(ManagerTermBase):

@@ -16,6 +16,7 @@ This script replays joint positions.
 """Launch Isaac Sim Simulator first."""
 
 import argparse
+import decimal
 
 from omni.isaac.lab.app import AppLauncher
 
@@ -64,10 +65,41 @@ UNITREE_GO2_CFG.spawn.rigid_props.disable_gravity = True
 scene = "stairs"
 
 # Recorded jpos path
-recording_path = "datasets/fromVision_motions_depth_stairs_walk/stairs_expert.txt"  # "datasets/fromVision_motions/fromVision_amp.txt" || datasets/mocap_motions/trot2_amp.txt
+recording_path = "/home/filip/Documents/oil2/logs/rsl_rl/unitree_go2_Stairs/2025-08-22_17-25-32_complex_curr_SEED_1/RecordStateEvaluation/recording.th"  # "datasets/fromVision_motions/fromVision_amp.txt" || datasets/mocap_motions/trot2_amp.txt
 
 freq = 1.0  # replay frequency in Hz for the recorded trajectory
-replay_in_recording_time = True # this will replay the recorded trajectory with its FrameDuration parameter. This flag overwrites the freq parameter
+replay_in_recording_time = True  # this will replay the recorded trajectory with its FrameDuration parameter. This flag overwrites the freq parameter
+
+
+class RecordingReader:
+    def __init__(self, path: str, num_envs: int) -> None:
+        self._root_state_w, self._jpos, self._jvel = torch.load(path)
+        
+        # idxs = torch.randperm(self._root_state_w.size()[1])
+        idxs = [0]
+        self._root_state_w=self._root_state_w[:, idxs]
+        self._jpos=self._jpos[:, idxs]
+        self._jvel= self._jvel[:, idxs]
+
+        self._num_t = self._root_state_w.size()[0]
+        self._num_envs = num_envs
+        assert self._num_envs <= self._root_state_w.size()[1]
+
+    def root_state_w(self, idx):
+        idx %= self._num_t
+        return self._root_state_w[idx, :self._num_envs, :]
+
+    def jpos(self, idx):
+        idx %= self._num_t
+        return self._jpos[idx, :self._num_envs, :]
+
+    def jvel(self, idx):
+        idx %= self._num_t
+        return self._jvel[idx, :self._num_envs, :]
+
+    @property
+    def num_frames(self):
+        return self._num_t
 
 
 def define_origins(num_origins: int, spacing: float) -> list[list[float]]:
@@ -157,6 +189,7 @@ def design_stairs_scene() -> tuple[dict, list[list[float]]]:
 
     return scene_entities, terrain_importer.env_origins
 
+
 def design_box_scene() -> tuple[dict, list[list[float]]]:
     """Designs the scene."""
     # Lights
@@ -167,7 +200,6 @@ def design_box_scene() -> tuple[dict, list[list[float]]]:
     terrain_cfg.sub_terrains["box"].box_height_range = (box_height, box_height)
     terrain_cfg.num_rows = 1
     terrain_cfg.num_cols = 1
-
 
     # Handler for terrains importing
     terrain_importer_cfg = TerrainImporterCfg(
@@ -198,20 +230,19 @@ def design_box_scene() -> tuple[dict, list[list[float]]]:
 
     return scene_entities, terrain_importer.env_origins
 
+
 def run_simulator(
     recording_dt: float,
     sim: sim_utils.SimulationContext,
     entities: dict[str, Articulation],
     origins: torch.Tensor,
-    motion_data: torch.Tensor = None,
+    motion_data: RecordingReader,
 ):
     """Runs the simulation loop."""
     # Define simulation stepping
     sim_dt = sim.get_physics_dt()
     count = 0
     global freq
-
-    motion_data = torch.tensor(motion_data, device=sim.device)
 
     for index, robot in enumerate(entities.values()):
         if not isinstance(robot, Articulation):
@@ -230,12 +261,12 @@ def run_simulator(
         robot.reset()
 
     phase = torch.tensor(0.0, device=sim.device)
-    num_frames = torch.tensor(motion_data.shape[0], device=sim.device)
+    num_frames = motion_data.num_frames
     freq = torch.tensor(freq, device=sim.device)
-    
+
     if replay_in_recording_time:
         freq = 1 / (num_frames * recording_dt)
-    
+
     # Simulate physics
     while simulation_app.is_running():
         start_time = time.time()
@@ -247,37 +278,37 @@ def run_simulator(
         unscaled_index = (phase / (2 * torch.pi)) * num_frames
         idx0 = torch.floor(unscaled_index).long() % num_frames
         idx1 = (idx0 + 1) % num_frames
-        
+
         # Check to not loop through from end to beginning of trajectory
         if not idx0 + 1 == idx1:
             assert idx0 == num_frames - 1
             idx1 = idx0
-        
-        
+
         alpha = (unscaled_index - torch.floor(unscaled_index)).unsqueeze(-1)
+        #
+        # # pos_start = AMPLoader.get_root_pos(motion_data[idx0])
+        # # pos_end = AMPLoader.get_root_pos(motion_data[idx1])
+        # # rot_start = AMPLoader.get_root_rot(motion_data[idx0])
+        # # rot_end = AMPLoader.get_root_rot(motion_data[idx1])
+        # # jpos_start = AMPLoader.get_joint_pose(motion_data[idx0])
+        # # jpos_end = AMPLoader.get_joint_pose(motion_data[idx1])
+        #
+        # pos_interpolated = AMPLoader.slerp(pos_start, pos_end, alpha)
+        # rot_interpolated = utils.quaternion_slerp(
+        #     rot_start.clone(), rot_end.clone(), alpha
+        # )
+        #
+        # # Rotation hack. Might be incorrect or uncessary depending on the recorded demo
+        # import math
+        #
+        # roll90 = math_utils.quat_from_euler_xyz(
+        #     roll=torch.tensor(math.pi / 2, device=rot_interpolated.device),
+        #     pitch=torch.tensor(math.pi, device=rot_interpolated.device),
+        #     yaw=torch.tensor(-math.pi / 2, device=rot_interpolated.device),
+        # )
+        # rot_interpolated = math_utils.quat_mul(roll90, rot_interpolated)
 
-        pos_start = AMPLoader.get_root_pos(motion_data[idx0])
-        pos_end = AMPLoader.get_root_pos(motion_data[idx1])
-        rot_start = AMPLoader.get_root_rot(motion_data[idx0])
-        rot_end = AMPLoader.get_root_rot(motion_data[idx1])
-        jpos_start = AMPLoader.get_joint_pose(motion_data[idx0])
-        jpos_end = AMPLoader.get_joint_pose(motion_data[idx1])
-        
-
-        pos_interpolated = AMPLoader.slerp(pos_start, pos_end, alpha)
-        rot_interpolated = utils.quaternion_slerp(rot_start.clone(), rot_end.clone(), alpha)
-
-        # Rotation hack. Might be incorrect or uncessary depending on the recorded demo
-        import math
-
-        roll90 = math_utils.quat_from_euler_xyz(
-            roll=torch.tensor(math.pi / 2, device=rot_interpolated.device),
-            pitch=torch.tensor(math.pi, device=rot_interpolated.device),
-            yaw=torch.tensor(-math.pi / 2, device=rot_interpolated.device),
-        )
-        rot_interpolated = math_utils.quat_mul(roll90, rot_interpolated)
-
-        jpos_interpolated = AMPLoader.slerp(jpos_start, jpos_end, alpha)
+        # jpos_interpolated = AMPLoader.slerp(jpos_start, jpos_end, alpha)
         # pos_interpolated_relative_to_origin = pos_interpolated - AMPLoader.get_root_pos(
         #     motion_data[0]
         # )
@@ -287,27 +318,31 @@ def run_simulator(
             if not isinstance(robot, Articulation):
                 continue
             robot.write_joint_state_to_sim(
-                jpos_interpolated.clone(), torch.zeros_like(jpos_interpolated).clone()
+                motion_data.jpos(idx0).clone(),
+                motion_data.jpos(idx0).clone(),
+                # jpos_interpolated.clone(), torch.zeros_like(jpos_interpolated).clone()
             )
-            
-                                # Combine new root pose
-            root_state = torch.cat(
-                [
-                    pos_interpolated + origins[0],
-                    rot_interpolated,
-                    torch.zeros_like(pos_start),  # base lin vel
-                    torch.zeros_like(pos_start),  # base ang vel
-                ],
-                dim=-1,
-            ).unsqueeze(0)
 
-            robot.write_root_state_to_sim(root_state)
+            # Combine new root pose
+            # root_state = torch.cat(
+            #     [
+            #         ,
+            #         motion_data.(idx0),
+            #         pos_interpolated + origins[0],
+            #         rot_interpolated,
+            #         torch.zeros_like(pos_start),  # base lin vel
+            #         torch.zeros_like(pos_start),  # base ang vel
+            #     ],
+            #     dim=-1,
+            # ).unsqueeze(0)
+            #
+            #
+            root_state = motion_data.root_state_w(idx0).clone()
+            root_state[:, :3] += origins[index].cpu()
+            robot.write_root_state_to_sim(root_state.clone())
 
         # perform step
         sim.step()
-        
-        
-
 
         # update buffers
         for robot in entities.values():
@@ -346,26 +381,18 @@ def main():
     # Play the simulator
     sim.reset()
 
-    with open(recording_path, "r") as f:
-        motion_json = json.load(f)
-        
-    recording_dt = float(motion_json["FrameDuration"])
-    
-    motion_data = AMPLoader("cuda", recording_dt, motion_files=[recording_path], transform_root_trajectory=True)
-    
-    assert len(motion_data.trajectories_full) == 1, "Only support one motion file for replay."
-    motion_data = motion_data.trajectories_full[0]
-    
-    lin_vel = AMPLoader.get_linear_vel_batch(motion_data)
-    lin_vel = torch.tensor(lin_vel, device=sim.device)
-    mean_speed = torch.norm(lin_vel, dim=1).mean().item()
-    print(f"[INFO]: Mean speed of the robot: {mean_speed:.2f} m/s")
+    # with open(recording_path, "r") as f:
+    #     motion_json = json.load(f)
 
+    # recording_dt = float(motion_json["FrameDuration"])
+
+    motion_data = RecordingReader(recording_path, num_envs=1)
 
     # Now we are ready!
     print("[INFO]: Setup complete...")
     # Run the simulator
-    run_simulator(recording_dt, sim, scene_entities, scene_origins, motion_data)
+    decimation = 4
+    run_simulator(sim.cfg.dt * decimation, sim, scene_entities, scene_origins, motion_data)
 
 
 if __name__ == "__main__":

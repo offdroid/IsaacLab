@@ -24,7 +24,6 @@ from . import residual_rl_data
 @configclass
 class UnitreeGo2StairsEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
     def __post_init__(self):
-
         # post init of parent
         super().__post_init__()
 
@@ -37,6 +36,7 @@ class UnitreeGo2StairsEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
         parameters.add_relative_position_on_stairs_observation(self)
         parameters.add_stair_parameters_observation(self)
         parameters.set_curriculum(self, enable=False)
+        # parameters.set_rewards_stairs_vertical(self)
         self.events.reference_state_initialization = None
 
         # self.is_amp_env = False
@@ -63,7 +63,7 @@ class UnitreeGo2StairsEnvCfgSimpleRewardRSI(UnitreeGo2StairsEnvCfgSimpleReward):
         parameters.set_amp_settings(
             self,
             motion_folder="datasets/fromVision_motions_depth_stairs_walk/*",
-            **rsi_params
+            **rsi_params,
         )
         self.is_amp_env = False
         self.events.reference_state_initialization.params["motion_files"] = [
@@ -114,7 +114,6 @@ class UnitreeGo2StairsEnvCfgSimpleRewardCurriculum_PLAY(
 @configclass
 class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
     def __post_init__(self):
-
         # post init of parent
         super().__post_init__()
 
@@ -138,13 +137,15 @@ class UnitreeGo2StairsEnvCfgComplexRewardRSI(UnitreeGo2StairsEnvCfgComplexReward
     def __post_init__(self):
         super().__post_init__()
 
+        parameters.set_stairs_env_terminations(self)
+
         rsi_params = {
             "reference_states": ["joints", "base"],
         }
         parameters.set_amp_settings(
             self,
             motion_folder="datasets/fromVision_motions_depth_stairs_walk/*",
-            **rsi_params
+            **rsi_params,
         )
         self.is_amp_env = False
         self.events.reference_state_initialization.params["motion_files"] = [
@@ -207,16 +208,16 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.add_stair_parameters_observation(self)
         parameters.set_velocity_rewards_amp(self)
         parameters.set_curriculum(self, enable=False)
-        self.events.reference_state_initialization = None
 
         rsi_params = {
-            "reference_states": ["joints", "base"],
+            "reference_states": [],
         }
         parameters.set_amp_settings(
             self,
             motion_folder="datasets/fromVision_motions_depth_stairs_walk/*",
-            **rsi_params
+            **rsi_params,
         )
+        self.events.reference_state_initialization = None
 
         self.scene.num_envs = 2 * 4096  # 5480
         # style
@@ -250,7 +251,7 @@ class AMPUnitreeGo2StairsEnvCfgRSI(AMPUnitreeGo2StairsEnvCfg):
         parameters.set_amp_settings(
             self,
             motion_folder="datasets/fromVision_motions_depth_stairs_walk/*",
-            **rsi_params
+            **rsi_params,
         )
 
     def update_motion_files(self):

@@ -59,6 +59,13 @@ def bias(data: torch.Tensor, value: float) -> torch.Tensor:
     return data + value
 
 
+def sinusoidal_positional_encoding(data: torch.Tensor) -> torch.Tensor:
+    """Sine cosine encoding of the input data"""
+    return torch.cat(
+        [torch.sin(data).unsqueeze(1), torch.cos(data.unsqueeze(-1))], dim=1
+    )
+
+
 ##
 # Sample of class based modifiers
 ##

@@ -132,6 +132,9 @@ class UnitreeGo2AMPBoxPPORunnerCfg(UnitreeGo2AMPFlatPPORunnerCfg):
 class UnitreeGo2StairsPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
     def __post_init__(self):
         super().__post_init__()
+        self.amp_task_reward_lerp = (
+            0.5  # weighting factor of task reward (style reward is 1-task_reward_lerp)
+        )
         self.experiment_name = "unitree_go2_Stairs" 
 
 # This class only exists to provide self.experiment_name for logging.

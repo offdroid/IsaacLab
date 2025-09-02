@@ -53,7 +53,12 @@ parser.add_argument(
     default=None,
     help="Use this to log evaluation metrics. It also enables additional logging and sets further flags programmatically below.",
 )
-parser.add_argument("--eval_config", type=str, default="DefaultEvalConfig", help="Here you can specify the name of a dataclass in eval_configurator.py to set some parameters of the evaluation (mostly impacts file saving for now).")
+parser.add_argument(
+    "--eval_config",
+    type=str,
+    default="DefaultEvalConfig",
+    help="Here you can specify the name of a dataclass in eval_configurator.py to set some parameters of the evaluation (mostly impacts file saving for now).",
+)
 
 parser.add_argument(
     "--x_speed",
@@ -97,7 +102,7 @@ if args_cli.evaluate:
     # NOTE it would be more clean to create separate environment configs, but this many additional environments, all of which would share same configurations.
     eval_config_class = getattr(eval_configurator, args_cli.eval_config)
     eval_config = eval_config_class()
-    
+
     args_cli.headless = True
     args_cli.num_envs = eval_config.num_envs
 
@@ -151,7 +156,7 @@ def main():
     # for correct metrics calculation
     if args_cli.evaluate:
         PLAY_EPISODE_LENGTH = eval_config.play_episode_length  # s
-        PLAY_EPISODES_PER_ENV = eval_config.play_episodes_per_env # int
+        PLAY_EPISODES_PER_ENV = eval_config.play_episodes_per_env  # int
 
         env_cfg = eval_config.set_env_cfg(env_cfg)
 
@@ -164,8 +169,11 @@ def main():
             "TargetXYDistribution",
             "TargetXYawDistribution",
             "RecordJposEpisodeTargetVelocity",
+            "RecordState",
         ]:
-            raise ValueError("You most likely want to use target speed and yaw values with TargetSpeedDistribution eval_config.")
+            raise ValueError(
+                "You most likely want to use target speed and yaw values with TargetSpeedDistribution eval_config."
+            )
 
     agent_cfg: RslRlOnPolicyRunnerCfg = cli_args.parse_rsl_rl_cfg(
         args_cli.task, args_cli
@@ -181,16 +189,22 @@ def main():
 
     # Overwrite env_cfg and agent_cfg with args_cli
     if args_cli.x_speed is not None:
-        env_cfg.commands.base_velocity.ranges.lin_vel_x = [args_cli.x_speed, args_cli.x_speed]
+        env_cfg.commands.base_velocity.ranges.lin_vel_x = [
+            args_cli.x_speed,
+            args_cli.x_speed,
+        ]
     if args_cli.y_speed is not None:
-        env_cfg.commands.base_velocity.ranges.lin_vel_y = [args_cli.y_speed, args_cli.y_speed]
+        env_cfg.commands.base_velocity.ranges.lin_vel_y = [
+            args_cli.y_speed,
+            args_cli.y_speed,
+        ]
     if args_cli.yaw is not None:
         env_cfg.commands.base_velocity.ranges.ang_vel_z = [args_cli.yaw, args_cli.yaw]
 
     # overwrite actuator max_delay for HUAWEI experiments
     if args_cli.max_delay is not None:
-        env_cfg.scene.robot.actuators['base_legs'].max_delay = int(args_cli.max_delay)
-        print(env_cfg.scene.robot.actuators['base_legs'].max_delay)
+        env_cfg.scene.robot.actuators["base_legs"].max_delay = int(args_cli.max_delay)
+        print(env_cfg.scene.robot.actuators["base_legs"].max_delay)
 
     # Overwrite RSI
     if args_cli.disable_rsi:
@@ -206,11 +220,13 @@ def main():
     loaded_env_cfg = yaml.load(f, Loader=yaml.UnsafeLoader)
     f.close()
 
-    # Get curriculu
+    # Get curriculum
 
     # Previous policies have been trained with different configuration.
     agent_cfg.policy.actor_hidden_dims = loaded_agent_cfg["policy"]["actor_hidden_dims"]
-    agent_cfg.policy.critic_hidden_dims = loaded_agent_cfg["policy"]["critic_hidden_dims"]
+    agent_cfg.policy.critic_hidden_dims = loaded_agent_cfg["policy"][
+        "critic_hidden_dims"
+    ]
 
     if env_cfg.is_amp_env:
         # Load same motion files that were used during training. This is required, otherwise results might be different than in training due to RSI, and the agent_expert_distances gets calculated incorrectly.
@@ -222,13 +238,11 @@ def main():
         env_cfg.update_motion_files()
         agent_cfg.update_motion_files()
 
-        print(
-            f"Loaded the following AMP motion files: {env_cfg.amp_motion_files}"
-        )
+        print(f"Loaded the following AMP motion files: {env_cfg.amp_motion_files}")
 
-        assert (
-            env_cfg.amp_motion_files == agent_cfg.amp_motion_files
-        ), f"Motion files in env and agent config should be the same, but got {env_cfg.amp_motion_files} and {agent_cfg.amp_motion_files}."
+        assert env_cfg.amp_motion_files == agent_cfg.amp_motion_files, (
+            f"Motion files in env and agent config should be the same, but got {env_cfg.amp_motion_files} and {agent_cfg.amp_motion_files}."
+        )
 
     # specify directory for logging experiments
     env_cfg.seed = agent_cfg.seed
@@ -247,7 +261,9 @@ def main():
             == "base_lin_vel"
             and list(env_cfg.observations.policy.__dict__.items())[3][0]
             == "base_ang_vel"
-        ), "Found obs terms at wrong position. It must be on the correct position for the ActorFreq!"
+        ), (
+            "Found obs terms at wrong position. It must be on the correct position for the ActorFreq!"
+        )
 
     if args_cli.evaluate:
         eval_config.run_checks(env_cfg=env_cfg, args_cli=args_cli)
@@ -307,15 +323,8 @@ def main():
 
     # reset environment
     obs, _ = env.get_observations()
-    obs_history_storage = ObservationHistoryStorage(
-        num_envs=args_cli.num_envs,
-        num_obs=obs.shape[1],
-        max_length=5,
-        device=env.unwrapped.device,
-    )
 
     if env_cfg.is_amp_env:
-
         # Expert trajectories are required to compute agent_expert_distances metrics
         # expert_trajectories = env.unwrapped.event_manager.get_term_cfg("reference_state_initialization").func.amp_loader.trajectories # this is a list of trajectories: [(n_frames, n_amp_obs),...]
         # Better retrieve the expert trajectories from the ppo_runner, as RSI might not be used in some cases.
@@ -344,13 +353,15 @@ def main():
 
         # amp_obs = env.unwrapped.get_amp_observations().to(env.unwrapped.device)
         # amp_rewards_buffer = torch.zeros(env.unwrapped.num_envs, device=env.unwrapped.device)
-        agent_expert_distances = torch.zeros(env.unwrapped.num_envs, device=env.unwrapped.device)
+        agent_expert_distances = torch.zeros(
+            env.unwrapped.num_envs, device=env.unwrapped.device
+        )
 
     # It is very unclean to use a second episode_length_buf besides the one in the environment. However, the one in the environment gets reset to 0 before I can calculate the metrics in this script. So I need to keep track of the episode lengths myself. In the future I'd like to find a way to avoid introducing a second episode_length_buf here.
-    episode_length_buf = torch.zeros(env.unwrapped.num_envs, device=env.unwrapped.device)
+    episode_length_buf = torch.zeros(
+        env.unwrapped.num_envs, device=env.unwrapped.device
+    )
     early_termination_counter = 0
-    obs_history_storage.add(obs)
-    obs_history = obs_history_storage.get()
 
     simulated_step_time = env.unwrapped.step_dt
 
@@ -396,9 +407,31 @@ def main():
         )
 
         if args_cli.evaluate:
+            num_t = int(PLAY_EPISODE_LENGTH / env.unwrapped.step_dt)
             jpos_log = torch.zeros(
                 (
-                    int(PLAY_EPISODE_LENGTH / env.unwrapped.step_dt),
+                    num_t,
+                    int(env.unwrapped.num_envs),
+                    12,
+                )
+            )
+            recorder_root_state_w = torch.zeros(
+                (
+                    num_t,
+                    int(env.unwrapped.num_envs),
+                    13,
+                )
+            )
+            recorder_jpos = torch.zeros(
+                (
+                    num_t,
+                    int(env.unwrapped.num_envs),
+                    12,
+                )
+            )
+            recorder_jvel = torch.zeros(
+                (
+                    num_t,
                     int(env.unwrapped.num_envs),
                     12,
                 )
@@ -407,7 +440,7 @@ def main():
     timestep = 0
     total_num_steps = 0
     # simulate environment
-    
+
     # action_log = []
     while simulation_app.is_running():
         # Record the start time of the current loop
@@ -416,20 +449,23 @@ def main():
         # Run everything in inference mode
         with torch.inference_mode():
             # Agent steppinp
-            actions = policy(obs_history)
+            actions = policy(obs)
             # action_log.append(actions.cpu().numpy().tolist())
-            
+
             # Environment stepping
             obs, _, dones, extras, *optional_values = env.step(actions)
             if env_cfg.is_amp_env and args_cli.evaluate:
-
                 amp_observations = env.unwrapped.get_amp_observations()
-                agent_expert_distances += torch.cdist(amp_observations, interpolated_expert_trajectories).min(dim=1).values
+                agent_expert_distances += (
+                    torch.cdist(amp_observations, interpolated_expert_trajectories)
+                    .min(dim=1)
+                    .values
+                )
 
                 for i, traj in enumerate(interpolated_expert_trajectories_list):
-                    assert (
-                        amp_observations.shape[0] == 1
-                    ), "Expect only one environment."
+                    assert amp_observations.shape[0] == 1, (
+                        "Expect only one environment."
+                    )
                     agent_expert_distances_individual[timestep, i] = (
                         torch.cdist(amp_observations, traj).min(dim=1).values[0]
                     )
@@ -475,12 +511,21 @@ def main():
                     t, :, AMPLoader.JOINT_VEL_START_IDX : AMPLoader.JOINT_VEL_END_IDX
                 ] = env.unwrapped.scene["robot"].data.joint_vel
 
+            if args_cli.evaluate:
+                t = total_num_steps // env.unwrapped.num_envs
+                recorder_root_state_w[t] = env.unwrapped.scene[
+                    "robot"
+                ].data.root_state_w
+                recorder_root_state_w[t, :, :3] -= env.unwrapped.scene.env_origins.cpu()
+                recorder_jpos[t] = env.unwrapped.scene["robot"].data.joint_pos
+                recorder_jvel[t] = env.unwrapped.scene["robot"].data.joint_vel
+
             total_num_steps += env.unwrapped.num_envs
             episode_length_buf += 1
 
-            assert (
-                len(optional_values) == 2 or len(optional_values) == 0
-            ), "Too many optional values returned by the environment"
+            assert len(optional_values) == 2 or len(optional_values) == 0, (
+                "Too many optional values returned by the environment"
+            )
 
             if dones.any():
                 if args_cli.evaluate:
@@ -491,10 +536,15 @@ def main():
                     ) in env.unwrapped.command_manager._terms[
                         "base_velocity"
                     ].episode_metrics.items():
-                        eval_episode_metrics.setdefault(metric_name, []).extend(metric_value[dones==1.0].cpu().tolist())
+                        eval_episode_metrics.setdefault(metric_name, []).extend(
+                            metric_value[dones == 1.0].cpu().tolist()
+                        )
                     # Curriculum state
                     if hasattr(env.unwrapped, "curriculum_manager"):
-                        if "terrain_levels" in env.unwrapped.curriculum_manager._curriculum_state:
+                        if (
+                            "terrain_levels"
+                            in env.unwrapped.curriculum_manager._curriculum_state
+                        ):
                             eval_episode_metrics["curriculum_state"] = (
                                 env.unwrapped.curriculum_manager._curriculum_state[
                                     "terrain_levels"
@@ -539,11 +589,6 @@ def main():
                         .item()
                     )
 
-                obs_history_storage.reset(dones)
-
-            obs_history_storage.add(obs)
-            obs_history = obs_history_storage.get()
-
         timestep += 1
         if args_cli.video:
             # Exit the play loop after recording one video
@@ -565,7 +610,7 @@ def main():
         if args_cli.evaluate:
             if total_num_steps >= NUM_EVAL_STEPS:
                 break
-            
+
     # Assuming action_log is already defined and has shape (523, 1, 12)
     # Example: action_log = np.random.rand(523, 1, 12)
     # actions = np.array(action_log).squeeze(axis=1)  # shape: (523, 12)
@@ -595,7 +640,7 @@ def main():
     if args_cli.evaluate:
         total_episodes_real = len(
             eval_episode_metrics["episode_lengths"]
-        ) # can use any metric here - len should be similar for all
+        )  # can use any metric here - len should be similar for all
 
         for key, value in eval_episode_metrics.items():
             eval_episode_metrics[key] = torch.mean(torch.tensor(value)).item()
@@ -621,10 +666,12 @@ def main():
                     "sub_terrains"
                 ]["stairs"]["step_height_range"]
             else:
-                raise ValueError("Unknown terrain type to calculate real curriculum values.")
+                raise ValueError(
+                    "Unknown terrain type to calculate real curriculum values."
+                )
             eval_episode_metrics["real_curriculum_state"] = (
-                (eval_episode_metrics["curriculum_state"] - 0) /
-                loaded_env_cfg["scene"]["terrain"]["terrain_generator"]["num_rows"]
+                (eval_episode_metrics["curriculum_state"] - 0)
+                / loaded_env_cfg["scene"]["terrain"]["terrain_generator"]["num_rows"]
             ) * (curr_min_max[1] - curr_min_max[0]) + curr_min_max[0]
 
         # other stats
@@ -634,14 +681,18 @@ def main():
         eval_episode_metrics["total_episodes (real)"] = total_episodes_real
 
         eval_episode_metrics["number_failed_episodes"] = early_termination_counter
-        eval_episode_metrics["successrate"] = (total_episodes_real - early_termination_counter) / total_episodes_real
+        eval_episode_metrics["successrate"] = (
+            total_episodes_real - early_termination_counter
+        ) / total_episodes_real
 
         eval_episode_metrics["episode length in s (target)"] = PLAY_EPISODE_LENGTH
 
         if env_cfg.is_amp_env:
             eval_episode_metrics["amp_motion_folder"] = env_cfg.amp_motion_folder
 
-        eval_metric_file_name = eval(eval_config.eval_metric_filename) # eval: allows for dynamic file naming which is convenient for logging
+        eval_metric_file_name = eval(
+            eval_config.eval_metric_filename
+        )  # eval: allows for dynamic file naming which is convenient for logging
         with open(os.path.join(eval_metric_folder, eval_metric_file_name), "w") as f:
             yaml.dump(eval_episode_metrics, f)
         print(f"Metrics: {eval_episode_metrics}")
@@ -664,8 +715,19 @@ def main():
         aedi_path = os.path.join(
             eval_metric_folder, "agent_expert_distances_individual.txt"
         )
-        torch.save(torch.stack(collected_agent_expert_distances_individual), aedi_path)
-        print(f"Agent expert distances saved to: {aedi_path}")
+        if len(collected_agent_expert_distances_individual) > 0:
+            torch.save(
+                torch.stack(collected_agent_expert_distances_individual), aedi_path
+            )
+            print(f"Agent expert distances saved to: {aedi_path}")
+        else:
+            print("Skipped saving agent expert distances because list is empty!")
+
+        if args_cli.evaluate:
+            recording_path = os.path.join(eval_metric_folder, "recording.th")
+            torch.save(
+                (recorder_root_state_w, recorder_jpos, recorder_jvel), recording_path
+            )
 
     # close the simulator
     env.close()
