@@ -656,7 +656,12 @@ def distance_to_stairs(
 
     # return (y_position_relative > 0).unsqueeze(1)
     return torch.cat(
-        [distance_to_start.clamp(-0.6, 0.6), distance_to_end.clamp(-0.6, 0.6)], dim=1
+        [
+            distance_to_start.clamp(-0.6, 0.6),
+            distance_to_end.clamp(-0.6, 0.6),
+            (distance_to_start * distance_to_end).clamp(-1, 1),
+        ],
+        dim=1,
     )
 
 
