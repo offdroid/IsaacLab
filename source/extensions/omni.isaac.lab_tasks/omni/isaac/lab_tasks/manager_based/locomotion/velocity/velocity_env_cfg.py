@@ -429,7 +429,6 @@ class RewardsCfg:
         weight=0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
         },
     )
     # freq_rate_l2 = RewTerm(

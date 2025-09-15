@@ -245,6 +245,7 @@ def stairs_terrain(
             _step_height -= cum_height_error + height_noise
 
         gap = max(_step_height - 0.01, 0.0)
+        gap = 0
         step_center = [
             terrain_center[0],
             cfg.border_width
