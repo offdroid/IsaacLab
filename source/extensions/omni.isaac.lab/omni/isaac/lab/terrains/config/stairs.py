@@ -24,7 +24,8 @@ STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
     sub_terrains={
         "stairs": terrain_gen.MeshStairsTerrainCfg(
             step_height_range=(0.08, 0.16),  # demo was done for step height 0.14
-            width_to_height_ratio=34 / 14, # demo recorded for 34 / 14,
+            width_to_height_ratio=34 / 14,  # demo recorded for 34 / 14,
+            y_coordinate_origin_relative_to_first_stair_step=-1.5,
         )
     },
 )

@@ -7,16 +7,18 @@ import omni.isaac.lab_tasks.manager_based.locomotion.velocity.mdp as mdp
 from omni.isaac.lab.managers import EventTermCfg as EventTerm
 from omni.isaac.lab.managers import SceneEntityCfg
 
+from omni.isaac.lab.managers import CurriculumTermCfg as CurrTerm
 from omni.isaac.lab.managers import ObservationTermCfg as ObsTerm
 from omni.isaac.lab.managers import RewardTermCfg as RewTerm
 from omni.isaac.lab.managers import TerminationTermCfg as DoneTerm
-from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
-
-
+from omni.isaac.lab.utils.noise import (
+    AdditiveUniformNoiseCfg as Unoise,
+    UniformSinusodalPositionNoiseCfg as USinPosNoise,
+    UniformAngleNoiseCfg as UAngleNoise,
+    BinaryNoiseCfg as BinaryNoise,
+)
 
 from omni.isaac.lab_tasks.manager_based.navigation.mdp.rewards import position_command_error_tanh, heading_command_error_abs
-
-from omni.isaac.lab.utils.noise import AdditiveUniformNoiseCfg as Unoise
 
 ##
 # Pre-defined configs
@@ -41,6 +43,59 @@ def set_play_settings_rough(cfg):
         cfg.scene.terrain.terrain_generator.num_rows = 5
         cfg.scene.terrain.terrain_generator.num_cols = 5
         cfg.scene.terrain.terrain_generator.curriculum = False
+
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+            0.0,
+            0.10,
+        )
+
+
+def set_curriculum(cfg, enable: bool):
+    if not enable:
+        cfg.scene.terrain.terrain_generator.curriculum = False
+        cfg.curriculum.terrain_levels = None
+        cfg.scene.terrain.max_init_terrain_level = None
+        if cfg.curriculum is not None:
+            cfg.curriculum.terrain_levels = None
+        else:
+            print("[WARN] Curriculum Manager is disabled.")
+
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+            0.0,
+            0.25,
+        )
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = None
+
+        # cfg.curriculum.sparse_reward_schedule = CurrTerm(
+        #     func=modify_reward_weight,
+        #     params={
+        #         "term_name": "sparse_reward",
+        #         "num_steps": 10_000,
+        #     },
+        # )
+        # cfg.curriculum = None
+        # cfg.curriculum.epsiode_length = CurrTerm(
+        #     func=mdp.modify_env_param,
+        #     params={
+        #         "address": "cfg.episode_length_s",
+        #         "modify_fn": resample_epsiode_length,  # e.g., decrease or increase
+        #     },
+        # )
+    else:
+        cfg.scene.terrain.terrain_generator.curriculum = True
+        cfg.scene.terrain.max_init_terrain_level = 0
+        assert cfg.terrain_type == "stairs"
+        cfg.curriculum.terrain_levels = CurrTerm(
+            func=mdp.terrain_levels_vel,
+            params={"custom_required_distance_for_move_up": 3},
+        )
+        assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+            0.00,
+            0.20,
+        )
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = None
+        # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
 
 def set_terrain(cfg):
@@ -152,9 +207,7 @@ def set_velocity_rewards_amp(cfg):
     cfg.rewards.track_lin_vel_xy_exp.params["std"] = (
         0.22  # TODO should this be ang_vel?
     )
-    
-    assert False, "Rewards"
-    
+
     # cfg.rewards.feet_air_time.weight = (
     #     100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
     # )
@@ -164,11 +217,11 @@ def set_velocity_rewards_amp(cfg):
     cfg.rewards.torque_limits.weight = -35
     cfg.rewards.torque_limits_2.weight = -100
     # cfg.rewards.dof_acc_l2.weight = -5e-6
-    
+
     # cfg.rewards.undesired_contacts_thigh.weight = -1.0
     # cfg.rewards.undesired_contacts_calf.weight = -1.0
     # cfg.rewards.contact_forces.weight = -1.0
-    
+
 def set_box_rewards_amp(cfg):
     # disable rewards
     for field in fields(cfg.rewards):
@@ -270,7 +323,7 @@ def set_stairs_env_cfg_cmds(cfg):
         debug_vis=cfg.commands.base_velocity.debug_vis,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-0.1, 0.1),
-            lin_vel_y=(-0.5, 1.0),
+            lin_vel_y=(0.2, 0.7),
             ang_vel_z=(0, 0),
             heading=(
                 math.pi / 2 - math.radians(20),
@@ -281,7 +334,6 @@ def set_stairs_env_cfg_cmds(cfg):
 
 
 def set_box_env_cfg_cmds(cfg):
-
     cfg.commands.base_velocity = mdp.Global3DUniformVelocityCommandCfg(
         # inherit parameters where possible
         asset_name=cfg.commands.base_velocity.asset_name,
@@ -352,10 +404,10 @@ def set_box_env_cfg_cmds(cfg):
 
 def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
-                "x": (-0.5, 0.5),
-                "y": (-0.1, 0.1),
-                "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
-            }
+        "x": (-0.5, 0.5),
+        "y": (-0.1, 0.1),
+        "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
+    }
 
 def set_box_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
@@ -369,13 +421,27 @@ def set_box_env_cfg_reset_base(cfg):
             }
 
 def add_relative_position_on_stairs_observation(cfg):
-    cfg.observations.policy.relative_position_on_stairs = ObsTerm(func=mdp.relative_position_on_stairs)
+    cfg.observations.policy.relative_position = ObsTerm(
+        func=mdp.relative_position_on_stairs,
+        noise=USinPosNoise(n_min=-0.1, n_max=0.1),
+    )
+    cfg.observations.policy.yaw = ObsTerm(
+        func=mdp.yaw,
+        noise=USinPosNoise(n_min=-0.05 * 2 * math.pi, n_max=0.05 * 2 * math.pi),
+    )
+    cfg.observations.policy.is_on_stairs = ObsTerm(
+        func=mdp.distance_to_stairs,
+        noise=Unoise(n_min=-0.01, n_max=0.01),
+    )
 
 def add_relative_position_to_box_observation(cfg):
     cfg.observations.policy.relative_position_to_box = ObsTerm(func=mdp.relative_position_to_box, noise=Unoise(n_min=-0.02, n_max=0.02))
 
 def add_stair_parameters_observation(cfg):
-    cfg.observations.policy.stair_parameters = ObsTerm(func=mdp.stair_parameters)
+    cfg.observations.policy.stair_parameters = ObsTerm(
+        func=mdp.stair_parameters,
+        noise=Unoise(n_min=-0.01, n_max=0.01),
+    )
 
 def add_box_parameters_observation(cfg):
     cfg.observations.policy.box_parameters = ObsTerm(func=mdp.box_parameters, noise=Unoise(n_min=-0.01, n_max=0.01))
@@ -420,11 +486,10 @@ def previous_domain_randomization_params(cfg):
     cfg.events.reset_gravity = None
     cfg.events.actuator_gains.params["stiffness_distribution_params"] = (0.8, 1.2)
     cfg.events.actuator_gains.params["damping_distribution_params"] = (0.8, 1.2)
-    
+
 def standing_domain_randomization(cfg):
     cfg.events.add_base_mass.params["mass_distribution_params"] = (-2.0, 2.0)
     cfg.events.base_com.params["com_range"]["z"] = (-0.02, 0.04) # robot false to the bag - so higher COM in z should help
-    
 
 
 def disable_domain_randomization(cfg):
@@ -461,7 +526,7 @@ def disable_domain_randomization(cfg):
     print("[INFO] Domain Randomization disabled. Note that you can probably train with much lower max_iterations compared to when using Domain Randomization.")
 
     assert not cfg.terrain_type == "flat_noisy", "flat_noisy is only for Domain Randomization."
-    
+
 def zero_domain_randomization(cfg):
     cfg.scene.robot.actuators["base_legs"].min_delay = 0
     cfg.scene.robot.actuators["base_legs"].max_delay = 0

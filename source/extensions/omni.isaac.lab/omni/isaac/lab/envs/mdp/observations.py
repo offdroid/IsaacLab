@@ -551,7 +551,9 @@ def relative_position_on_stairs(
     # step width for each robot's terrain
     step_width = env.scene.terrain.terrain_params["step_width"][rows, cols]
 
-    root_pos_y_absolute = asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1] # in environment frame
+    root_pos_y_absolute = (
+        asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
+    )  # in environment frame
 
     # It is important to define a coordinate system with regard to which the relative positions are calculated. Otherwise sim2real will be difficult.
     # We define the y-origin as beginning of first step.
@@ -559,18 +561,104 @@ def relative_position_on_stairs(
         root_pos_y_absolute
         + env.cfg.scene.terrain.terrain_generator.sub_terrains[
             "stairs"
-        ].y_coordinate_origin_relative_to_first_stair_step # needs to be ADDED according to definition
+        ].y_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
     )
-    
+
     # sine-cosine encoding of relative position using step_width
     frequency = 2 * torch.pi / step_width
     sin_encoding = torch.sin(frequency * y_position_relative)
     cos_encoding = torch.cos(frequency * y_position_relative)
-    
-    # This is privileged information -> potential omit this, or only use yaw.
-    root_rot = asset.data.root_quat_w
+    return torch.cat(
+        [
+            sin_encoding.unsqueeze(1),
+            cos_encoding.unsqueeze(1),
+        ],
+        dim=1,
+    )
 
-    return torch.cat([sin_encoding.unsqueeze(1), cos_encoding.unsqueeze(1), root_rot], dim=1)
+
+def relative_position_stair(
+    env: ManagerBasedEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Root position in the asset's root frame."""
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    # terrain indexes for each robot
+    # row is "difficulty level", column is "terrain type"
+    # (from terrain_importer.py)
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+
+    # step width for each robot's terrain
+    step_width = env.scene.terrain.terrain_params["step_width"][rows, cols]
+
+    root_pos_y_absolute = (
+        asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
+    )  # in environment frame
+
+    # It is important to define a coordinate system with regard to which the relative positions are calculated. Otherwise sim2real will be difficult.
+    # We define the y-origin as beginning of first step.
+    y_position_relative = (
+        root_pos_y_absolute
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].y_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
+    )
+
+    # sine-cosine encoding of relative position using step_width
+    frequency = 2 * torch.pi / step_width
+    # print(torch.quantile(frequency, q=torch.tensor([0.25, 0.5, 0.75]).cuda()))
+    return torch.cat(
+        [
+            torch.sin(frequency * y_position_relative).unsqueeze(-1),
+            torch.cos(frequency * y_position_relative).unsqueeze(-1),
+        ],
+        dim=1,
+    )
+
+
+def yaw(
+    env: ManagerBasedEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    """Yaw in the asset's root frame."""
+    asset: RigidObject = env.scene[asset_cfg.name]
+    _, _, yaw = math_utils.euler_xyz_from_quat(asset.data.root_quat_w)
+    return torch.cat(
+        [torch.sin(yaw).unsqueeze(-1), torch.cos(yaw.unsqueeze(-1))], dim=1
+    )
+
+
+def distance_to_stairs(
+    env: ManagerBasedEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+):
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+
+    total_stairs_length = (
+        env.scene.terrain.terrain_params["num_steps"][rows, cols]
+        * env.scene.terrain.terrain_params["step_width"][rows, cols]
+    )
+    root_pos_y_absolute = asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
+    y_position_relative = (
+        root_pos_y_absolute
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].y_coordinate_origin_relative_to_first_stair_step
+    )
+
+    distance_to_start = y_position_relative.unsqueeze(1)
+    distance_to_end = (y_position_relative - total_stairs_length).unsqueeze(1)
+
+    # return (y_position_relative > 0).unsqueeze(1)
+    return torch.cat(
+        [distance_to_start.clamp(-0.6, 0.6), distance_to_end.clamp(-0.6, 0.6)], dim=1
+    )
+
 
 def relative_position_to_box(
     env: ManagerBasedEnv,

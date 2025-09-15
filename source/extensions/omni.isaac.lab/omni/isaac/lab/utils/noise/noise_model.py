@@ -9,6 +9,8 @@ import torch
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+from omni.isaac.lab.utils.math import normalize, wrap_to_pi
+
 if TYPE_CHECKING:
     from . import noise_cfg
 
@@ -68,6 +70,39 @@ def uniform_noise(data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg) -> torch.T
         return torch.rand_like(data) * (cfg.n_max - cfg.n_min) + cfg.n_min
     else:
         raise ValueError(f"Unknown operation in noise: {cfg.operation}")
+
+
+def uniform_quat_noise(
+    data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg
+) -> torch.Tensor:
+    """Applies a uniform noise to a given data set for quaternions, i.e., normalizes after noise application."""
+    return normalize(uniform_noise(data, cfg))
+
+
+def uniform_angle_noise(
+    data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg
+) -> torch.Tensor:
+    """Applies a uniform noise to a given data set for angles, i.e., wraps to pi after noise application."""
+    return wrap_to_pi(uniform_noise(data, cfg))
+
+
+def uniform_sinusodal_position_noise(
+    data: torch.Tensor, cfg: noise_cfg.UniformNoiseCfg
+) -> torch.Tensor:
+    """Applies a uniform noise to a given data set encoded with sinusoidal positional encoding"""
+    assert len(data.shape) == 2
+    assert data.shape[1] == 2
+    angle = torch.asin(data[:, 0])
+    data = uniform_noise(angle, cfg)
+    return torch.cat(
+        [torch.sin(data).unsqueeze(1), torch.cos(data.unsqueeze(-1))], dim=1
+    )
+
+
+def binary_noise(data: torch.Tensor, cfg: noise_cfg.BinaryNoiseCfg) -> torch.Tensor:
+    """Applies a uniform noise to a given data set encoded with sinusoidal positional encoding"""
+    flip = torch.rand_like(data.to(torch.float32)) < cfg.prob_flip
+    return data ^ flip
 
 
 def gaussian_noise(data: torch.Tensor, cfg: noise_cfg.GaussianNoiseCfg) -> torch.Tensor:

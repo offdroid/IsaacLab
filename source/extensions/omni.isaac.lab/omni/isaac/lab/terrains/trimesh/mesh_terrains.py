@@ -147,23 +147,56 @@ def pyramid_stairs_terrain(
 
     return meshes_list, origin
 
+
+def _compute_stairs_parameters(
+    difficulty: float, cfg: mesh_terrains_cfg.MeshStairsTerrainCfg
+):
+    step_height = cfg.step_height_range[0] + difficulty * (
+        cfg.step_height_range[1] - cfg.step_height_range[0]
+    )
+    if cfg.step_width is not None:
+        step_width = cfg.step_width
+    else:
+        step_width = (
+            step_height * cfg.width_to_height_ratio
+        )  # demo was collected for a stair of step height 14cm and step width 34 cm. We want to keep that ratio for all generated stairs.
+        step_width = max(0.2, step_width)
+
+    available_y_for_stairs = (
+        cfg.size[1]
+        - 2 * cfg.border_width
+        - (cfg.platform_width_bottom + cfg.platform_width_top)
+    )
+    assert (
+        available_y_for_stairs > 0
+    ), "Insufficient Y-space for steps after accounting for platforms and borders. Y space equals width!"
+
+    num_steps = int(available_y_for_stairs // step_width)
+    print(
+        f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
+    )
+    assert (
+        num_steps > 4
+    ), f"Generated low amount of stairs:  {num_steps}. Are you sure your terrain parameters are suitable?"
+    return {
+        "available_y_for_stairs": available_y_for_stairs,
+        "num_steps": num_steps,
+        "step_height": step_height,
+        "step_width": step_width,
+    }
+
+
 def stairs_terrain(
     difficulty: float, cfg: mesh_terrains_cfg.MeshStairsTerrainCfg
 ) -> tuple[list[trimesh.Trimesh], np.ndarray]:
     # Resolve terrain parameters
-    step_height = cfg.step_height_range[0] + difficulty * (
-        cfg.step_height_range[1] - cfg.step_height_range[0]
+    terrain_params = _compute_stairs_parameters(difficulty, cfg)
+    available_y_for_stairs = terrain_params["available_y_for_stairs"]
+    num_steps = terrain_params["num_steps"]
+    step_width, step_height = (
+        terrain_params["step_width"],
+        terrain_params["step_height"],
     )
-    step_width = step_height * cfg.width_to_height_ratio # demo was collected for a stair of step height 14cm and step width 34 cm. We want to keep that ratio for all generated stairs.
-    
-    terrain_params = {"step_height": step_height, "step_width": step_width}
-
-    available_y_for_stairs = cfg.size[1] - 2 * cfg.border_width - (cfg.platform_width_bottom + cfg.platform_width_top)
-    assert available_y_for_stairs > 0, "Insufficient Y-space for steps after accounting for platforms and borders. Y space equals width!"
-
-    num_steps = int(available_y_for_stairs // step_width)
-    print(f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}")
-    assert num_steps > 4, f"Generated low amount of stairs:  {num_steps}. Are you sure your terrain parameters are suitable?"
 
     # Add remaining y-space to top platform
     overflow = available_y_for_stairs - num_steps * step_width
@@ -197,26 +230,55 @@ def stairs_terrain(
     )
     meshes_list.append(bottom_platform)
 
+    cum_height_error = 0.0
+    cum_width_error = 0.0
+
     # Create steps
     for step in range(num_steps):
+        height_noise = torch.randn([]) * 0.05 * step_height
+        width_noise = torch.randn([]) * 0.01 * step_width
+        _step_height = step_height + height_noise
+        _step_width = step_width + width_noise
+
+        if step == num_steps - 1:
+            _step_width -= cum_width_error + width_noise
+            _step_height -= cum_height_error + height_noise
+
+        gap = max(_step_height - 0.01, 0.0)
         step_center = [
             terrain_center[0],
-            cfg.border_width + cfg.platform_width_bottom + (step + 0.5) * step_width,
-            (step + 1) * step_height / 2,  # Center of box from ground to height
+            cfg.border_width
+            + cfg.platform_width_bottom
+            + step * step_width
+            + _step_width / 2
+            + cum_width_error,
+            step * step_height
+            + cum_height_error
+            + _step_height / 2
+            + gap / 2,  # Center of box from ground to height
         ]
+        cum_height_error += height_noise
+        cum_width_error += width_noise
         step_mesh = trimesh.creation.box(
-            (terrain_size[0], step_width, (step + 1) * step_height), # z: step starts from ground
+            (
+                terrain_size[0],
+                _step_width,
+                # step * step_height + _step_height - gap / 2,
+                _step_height - gap,
+            ),  # z: step starts from ground
             trimesh.transformations.translation_matrix(step_center),
         )
         meshes_list.append(step_mesh)
-        
+
     # sanity check if the center of the top platform is equal for approaching it from left (y=0) and right (y=cfg.size[1])
     assert math.isclose(
         cfg.size[1] - cfg.border_width - cfg.platform_width_top / 2,
         cfg.border_width
         + cfg.platform_width_bottom
         + num_steps * step_width
-        + cfg.platform_width_top / 2, rel_tol=1e-5, abs_tol=1e-5
+        + cfg.platform_width_top / 2,
+        rel_tol=1e-5,
+        abs_tol=1e-5,
     ), "The y coordinate of the center of the top platform doesnt add up. Check terrain configuration and terrain generation logic."
 
     # Top platform
@@ -226,9 +288,7 @@ def stairs_terrain(
         + cfg.platform_width_bottom
         + num_steps * step_width
         + cfg.platform_width_top / 2,
-        num_steps
-        * step_height
-        / 2,
+        num_steps * step_height / 2,
     ]
     top_platform = trimesh.creation.box(
         (terrain_size[0], cfg.platform_width_top, (num_steps + 0) * step_height),
@@ -237,12 +297,18 @@ def stairs_terrain(
     meshes_list.append(top_platform)
 
     # Terrain origin is at the bottom plane shortly before the stairs start
-    assert cfg.y_coordinate_origin_relative_to_first_stair_step < 0, "This variable should be negative so that the robot is spawned right in front of the stairs. Recommended valu: -0.5."
+    assert (
+        cfg.y_coordinate_origin_relative_to_first_stair_step < 0
+    ), "This variable should be negative so that the robot is spawned right in front of the stairs. Recommended valu: -0.5."
     origin = np.array(
         [
             bottom_platform_center[0],
-            cfg.platform_width_bottom + cfg.border_width + cfg.y_coordinate_origin_relative_to_first_stair_step, # NOTE when you change those values, you need to adapt the observation relative_position_on_stairs.
-            bottom_platform_center[2] + step_height + 0.1, # some z offset so that I can use same spawn height as for flat terrain. TODO: should be fixed by lowering terrain as spawn height depends on step size.
+            cfg.platform_width_bottom
+            + cfg.border_width
+            + cfg.y_coordinate_origin_relative_to_first_stair_step,  # NOTE when you change those values, you need to adapt the observation relative_position_on_stairs.
+            bottom_platform_center[2]
+            + step_height
+            + 0.1,  # some z offset so that I can use same spawn height as for flat terrain. TODO: should be fixed by lowering terrain as spawn height depends on step size.
         ]
     )
 

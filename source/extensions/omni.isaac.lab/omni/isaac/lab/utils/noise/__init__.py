@@ -25,9 +25,30 @@ Usage:
     my_noisified_tensor = cfg.func(my_tensor, cfg)
 
 """
+
 from .noise_cfg import NoiseCfg  # noqa: F401
-from .noise_cfg import ConstantNoiseCfg, GaussianNoiseCfg, NoiseModelCfg, NoiseModelWithAdditiveBiasCfg, UniformNoiseCfg
-from .noise_model import NoiseModel, NoiseModelWithAdditiveBias, constant_noise, gaussian_noise, uniform_noise
+from .noise_cfg import (
+    BinaryNoiseCfg,
+    ConstantNoiseCfg,
+    GaussianNoiseCfg,
+    NoiseModelCfg,
+    NoiseModelWithAdditiveBiasCfg,
+    UniformAngleNoiseCfg,
+    UniformNoiseCfg,
+    UniformQuatNoiseCfg,
+    UniformSinusodalPositionNoiseCfg,
+)
+from .noise_model import (
+    NoiseModel,
+    NoiseModelWithAdditiveBias,
+    binary_noise,
+    constant_noise,
+    gaussian_noise,
+    uniform_angle_noise,
+    uniform_noise,
+    uniform_quat_noise,
+    uniform_sinusodal_position_noise,
+)
 
 # Backward compatibility
 ConstantBiasNoiseCfg = ConstantNoiseCfg

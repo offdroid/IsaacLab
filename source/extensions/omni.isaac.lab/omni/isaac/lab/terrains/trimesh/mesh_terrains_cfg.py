@@ -48,7 +48,8 @@ class MeshPyramidStairsTerrainCfg(SubTerrainBaseCfg):
     :obj:`platform_width` (depending on the direction) with no steps in the remaining area. Additionally,
     no border will be added.
     """
-    
+
+
 @configclass
 class MeshStairsTerrainCfg(SubTerrainBaseCfg):
     """Configuration for a stair mesh terrain."""
@@ -66,12 +67,15 @@ class MeshStairsTerrainCfg(SubTerrainBaseCfg):
     platform_width_bottom: float = 5
     """The width of the bottom platform."""
     holes: bool = False
-    
+
     y_coordinate_origin_relative_to_first_stair_step: float = -0.5
     """The coordinate origin of each sub_terrain relative to the start position of the first stair step. This values determines how far in front of the first stair step the robot spawns. Must be negative."""
-    
+
     width_to_height_ratio: float = 34 / 14
-    """The ratio of the width to the height of the stairs. (34 / 14) is value for the stair where video demonstrations were collected."""
+    """The ratio of the width to the height of the stairs. (34 / 14) is value for the stair where video demonstrations were collected. Only used if step_width is none."""
+
+    step_width: float | None = None
+    """Desired step_width in m. Set to none to compute the step width based on the width_to_height_ratio ratio."""
 
 
 @configclass
@@ -148,7 +152,6 @@ class MeshBoxTerrainCfg(SubTerrainBaseCfg):
     
     y_coordinate_origin_relative_to_box_start: float = -0.6
     """The coordinate origin of each sub_terrain relative to the start of the box in y-direction. This value determines how far in front of the box the robot spawns. Must be negative."""
-    
 
 
 @configclass

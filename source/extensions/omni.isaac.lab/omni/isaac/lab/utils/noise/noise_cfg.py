@@ -52,6 +52,58 @@ class UniformNoiseCfg(NoiseCfg):
 
 
 @configclass
+class UniformQuatNoiseCfg(NoiseCfg):
+    """Configuration for a additive uniform noise term for quaternions.
+
+    Like UniformNoiseCfg, but it normalizes the quaternion after applying the noise.
+    """
+
+    func = noise_model.uniform_quat_noise
+
+    n_min: torch.Tensor | float = -1.0
+    """The minimum value of the noise. Defaults to -1.0."""
+    n_max: torch.Tensor | float = 1.0
+    """The maximum value of the noise. Defaults to 1.0."""
+
+
+@configclass
+class UniformAngleNoiseCfg(NoiseCfg):
+    """Configuration for a additive uniform noise term for angles (in radians).
+
+    Like UniformNoiseCfg, but it wraps the angle to pi after applying the noise.
+    """
+
+    func = noise_model.uniform_angle_noise
+
+    n_min: torch.Tensor | float = -1.0
+    """The minimum value of the noise. Defaults to -1.0."""
+    n_max: torch.Tensor | float = 1.0
+    """The maximum value of the noise. Defaults to 1.0."""
+
+
+@configclass
+class UniformSinusodalPositionNoiseCfg(NoiseCfg):
+    """Configuration for a additive uniform noise term for sinusoidal position encoded data."""
+
+    func = noise_model.uniform_sinusodal_position_noise
+
+    n_min: torch.Tensor | float = -1.0
+    """The minimum value of the noise. Defaults to -1.0."""
+    n_max: torch.Tensor | float = 1.0
+    """The maximum value of the noise. Defaults to 1.0."""
+
+
+@configclass
+class BinaryNoiseCfg(NoiseCfg):
+    """Configuration for a binary noise term, which flips the data with a certain probablity"""
+
+    func = noise_model.binary_noise
+
+    prob_flip: torch.Tensor | float = 0.1
+    """Probablity that noise will flip data. Defaults to 0.1."""
+
+
+@configclass
 class GaussianNoiseCfg(NoiseCfg):
     """Configuration for an additive gaussian noise term."""
 

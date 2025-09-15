@@ -98,7 +98,7 @@ class CommandsCfg:
     base_velocity = mdp.UniformVelocityCommandCfg(
         asset_name="robot",
         resampling_time_range=(10.0, 10.0), # Always keep that exactly 10.0, otherwise metric computation will be wrong. (It is wrong anyways if episodes terminate prematurely!)
-        rel_standing_envs=0.02,
+        rel_standing_envs=0.05,
         rel_heading_envs=1.0,
         heading_command=False,
         heading_control_stiffness=0.5,
@@ -410,6 +410,8 @@ class RewardsCfg:
 
     )
 
+
+
     # residual_action_l2 = RewTerm(
     #     func=mdp.residual_action_l2,
     #     weight=0.0,#-0.04,
@@ -417,6 +419,14 @@ class RewardsCfg:
     feet_slide = RewTerm(
         func=mdp.feet_slide,
         weight=-0.25,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
+        },
+    )
+    feet_stumble = RewTerm(
+        func=mdp.feet_stumble,
+        weight=0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
             "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
