@@ -418,7 +418,7 @@ class RewardsCfg:
     # )
     feet_slide = RewTerm(
         func=mdp.feet_slide,
-        weight=-0.25,
+        weight=-0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
             "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
@@ -426,7 +426,7 @@ class RewardsCfg:
     )
     feet_stumble = RewTerm(
         func=mdp.feet_stumble,
-        weight=0.0,
+        weight=-0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
         },
