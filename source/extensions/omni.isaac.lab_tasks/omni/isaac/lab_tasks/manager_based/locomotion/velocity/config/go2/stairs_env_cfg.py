@@ -135,7 +135,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.dof_torques_l2.weight = 0
         self.rewards.torque_limits.weight = 0
         self.rewards.torque_limits_2.weight = 0
-        self.rewards.feet_stumble.weight = -5
+        # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
         # self.rewards.contact_forces.weight = -1
 
@@ -167,15 +167,15 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "warmup_period": 15,
             },
         )
-        # self.curriculum.feet_slide_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "feet_slide",
-        #         "weight": -5,
-        #         "num_steps": 30,
-        #         "warmup_period": 15,
-        #     },
-        # )
+        self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "feet_stumble",
+                "weight": -5,
+                "num_steps": 30,
+                "warmup_period": 15,
+            },
+        )
         # self.curriculum.feet_air_time_schedule = CurriculumTermCfg(
         #     func=modify_reward_weight,
         #     params={
