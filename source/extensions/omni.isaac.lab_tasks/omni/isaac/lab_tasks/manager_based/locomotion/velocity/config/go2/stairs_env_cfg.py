@@ -135,9 +135,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.dof_torques_l2.weight = 0
         self.rewards.torque_limits.weight = 0
         self.rewards.torque_limits_2.weight = 0
-        self.rewards.feet_stumble.weight = -10
-        self.rewards.feet_slide.weight = -10
-        self.rewards.contact_forces.weight = -10
+        # self.rewards.feet_stumble.weight = -5
+        # self.rewards.feet_slide.weight = -5
+        # self.rewards.contact_forces.weight = -5
 
         #
         self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
@@ -196,7 +196,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
         self.amp_motion_folder = (
-            "datasets/fromVision_motions_DepthCam_stairs_feetZAmpl_minimal_noslow/*"
+            "datasets/fromVision_motions_DepthCam_stairs_feetZAmpl_minimal_noflat/*"
         )
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
