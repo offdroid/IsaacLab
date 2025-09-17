@@ -429,7 +429,7 @@ def add_relative_position_on_stairs_observation(cfg):
         func=mdp.yaw,
         noise=USinPosNoise(n_min=-0.05 * 2 * math.pi, n_max=0.05 * 2 * math.pi),
     )
-    cfg.observations.policy.is_on_stairs = ObsTerm(
+    cfg.observations.policy.distance_to_stairs = ObsTerm(
         func=mdp.distance_to_stairs,
         noise=Unoise(n_min=-0.01, n_max=0.01),
     )
