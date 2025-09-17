@@ -659,7 +659,6 @@ def distance_to_stairs(
         [
             distance_to_start.clamp(-0.6, 0.6),
             distance_to_end.clamp(-0.6, 0.6),
-            (distance_to_start * distance_to_end).clamp(-1, 1),
         ],
         dim=1,
     )
