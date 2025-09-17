@@ -377,7 +377,7 @@ class RewardsCfg:
     contact_forces = RewTerm(
         func=mdp.contact_forces,
         weight=-0.0,
-        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "threshold": 100.0},
+        params={"sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*foot"), "threshold": 150.0},
     )
     # -- optional penalties
     flat_orientation_l2 = RewTerm(func=mdp.flat_orientation_l2, weight=-0.0)
@@ -400,7 +400,6 @@ class RewardsCfg:
             "limit": UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort
         }
     )
-    
     torque_limits_2 = RewTerm(
         func=applied_torque_limits,
         weight=-0.0,
@@ -409,13 +408,6 @@ class RewardsCfg:
         }
 
     )
-
-
-
-    # residual_action_l2 = RewTerm(
-    #     func=mdp.residual_action_l2,
-    #     weight=0.0,#-0.04,
-    # )
     feet_slide = RewTerm(
         func=mdp.feet_slide,
         weight=-0.0,
@@ -429,6 +421,13 @@ class RewardsCfg:
         weight=-0.0,
         params={
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
+        },
+    )
+    stand_still = RewTerm(
+        func=mdp.stand_still,
+        weight=-0.0,
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
         },
     )
     # freq_rate_l2 = RewTerm(

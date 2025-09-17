@@ -14,12 +14,27 @@ from __future__ import annotations
 import torch
 from typing import TYPE_CHECKING
 
+from omni.isaac.lab.assets import Articulation
 from omni.isaac.lab.managers import SceneEntityCfg
 from omni.isaac.lab.sensors import ContactSensor
 from omni.isaac.lab.utils.math import quat_rotate_inverse, yaw_quat
 
 if TYPE_CHECKING:
     from omni.isaac.lab.envs import ManagerBasedRLEnv
+
+
+def stand_still(
+    env: ManagerBasedRLEnv,
+    command_name: str = "base_velocity",
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    asset: Articulation = env.scene[asset_cfg.name]
+
+    reward = torch.sum(
+        torch.abs(asset.data.joint_pos - asset.data.default_joint_pos), dim=1
+    )
+    cmd_norm = torch.norm(env.command_manager.get_command(command_name), dim=1)
+    return reward * (cmd_norm < 0.1)
 
 
 def feet_air_time(
