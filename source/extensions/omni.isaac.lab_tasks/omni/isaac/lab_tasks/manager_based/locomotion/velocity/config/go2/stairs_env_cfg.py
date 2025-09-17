@@ -135,7 +135,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.dof_torques_l2.weight = 0
         self.rewards.torque_limits.weight = 0
         self.rewards.torque_limits_2.weight = 0
-        self.rewards.feet_stumble.weight = -20
+        self.rewards.feet_stumble.weight = -50
         self.rewards.feet_slide.weight = -5
         self.rewards.stand_still.weight = -1
         self.rewards.feet_air_time.weight = 100
