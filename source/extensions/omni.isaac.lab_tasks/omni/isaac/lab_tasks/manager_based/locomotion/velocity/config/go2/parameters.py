@@ -431,7 +431,7 @@ def add_relative_position_on_stairs_observation(cfg):
     )
     cfg.observations.policy.distance_to_stairs = ObsTerm(
         func=mdp.distance_to_stairs,
-        noise=Unoise(n_min=-0.01, n_max=0.01),
+        noise=Unoise(n_min=-0.02, n_max=0.02),
     )
 
 def add_relative_position_to_box_observation(cfg):
