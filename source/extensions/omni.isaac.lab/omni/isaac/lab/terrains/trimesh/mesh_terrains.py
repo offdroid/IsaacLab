@@ -235,7 +235,7 @@ def stairs_terrain(
 
     # Create steps
     for step in range(num_steps):
-        height_noise = torch.randn([]) * 0.07 * step_height
+        height_noise = torch.randn([]) * 0.05 * step_height
         width_noise = torch.randn([]) * 0.01 * step_width
         _step_height = step_height + height_noise
         _step_width = step_width + width_noise

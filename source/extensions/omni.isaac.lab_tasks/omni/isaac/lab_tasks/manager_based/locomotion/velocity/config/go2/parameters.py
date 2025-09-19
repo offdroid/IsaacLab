@@ -62,9 +62,9 @@ def set_curriculum(cfg, enable: bool):
 
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
             0.0,
-            0.25,
+            0.20,
         )
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = None
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
         # cfg.curriculum.sparse_reward_schedule = CurrTerm(
         #     func=modify_reward_weight,
