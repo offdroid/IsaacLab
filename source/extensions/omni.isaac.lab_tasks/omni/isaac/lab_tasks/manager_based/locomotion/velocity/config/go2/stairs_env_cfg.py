@@ -144,6 +144,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.undesired_contacts_thigh.weight = -20
         self.rewards.undesired_contacts_calf.weight = -20
 
+        self.terminations.bad_orientation = None
+
         #
         self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
@@ -181,6 +183,21 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "warmup_period": 15,
             },
         )
+
+        self.events.push_robot.params["velocity_range"] = {
+            "x": (-1, 1),
+            "y": (-1, 1),
+            "roll": (-1, 1),
+            "pitch": (-1, 1),
+            "yaw": (-1, 1),
+        }
+        self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
+        self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
+        # params={
+        #     "asset_cfg": SceneEntityCfg("robot", body_names="base"),
+        #     "force_range": (0.0, 0.0),
+        #     "torque_range": (-0.0, 0.0),
+        # },
         # self.curriculum.feet_air_time_schedule = CurriculumTermCfg(
         #     func=modify_reward_weight,
         #     params={

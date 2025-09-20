@@ -405,7 +405,9 @@ def set_box_env_cfg_cmds(cfg):
 def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
         "x": (-0.5, 0.5),
-        "y": (-0.2, 3.0),
+        "y": (-0.2, 1.7),
+        "roll": (-math.radians(20), math.radians(20)),
+        "pitch": (-math.radians(20), math.radians(20)),
         "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
     }
 
@@ -423,11 +425,13 @@ def set_box_env_cfg_reset_base(cfg):
 def add_relative_position_on_stairs_observation(cfg):
     cfg.observations.policy.relative_position = ObsTerm(
         func=mdp.relative_position_on_stairs,
-        noise=USinPosNoise(n_min=-0.1, n_max=0.1),
+        noise=Unoise(n_min=-0.1, n_max=0.1),
+        clip=(-1, 1),
     )
     cfg.observations.policy.yaw = ObsTerm(
         func=mdp.yaw,
-        noise=USinPosNoise(n_min=-0.05 * 2 * math.pi, n_max=0.05 * 2 * math.pi),
+        noise=Unoise(n_min=-0.1, n_max=0.1),
+        clip=(-1, 1),
     )
     cfg.observations.policy.distance_to_stairs = ObsTerm(
         func=mdp.distance_to_stairs,
