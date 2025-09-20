@@ -405,7 +405,7 @@ def set_box_env_cfg_cmds(cfg):
 def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
         "x": (-0.5, 0.5),
-        "y": (-0.2, 0.2),
+        "y": (-0.2, 3.0),
         "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
     }
 

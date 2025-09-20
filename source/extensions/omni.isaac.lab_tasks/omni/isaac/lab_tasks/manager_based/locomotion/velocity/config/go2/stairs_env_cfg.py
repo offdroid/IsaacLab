@@ -133,54 +133,54 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_velocity_rewards_amp(self)
 
-        self.rewards.dof_torques_l2.weight = -0.006
-        self.rewards.torque_limits.weight = -35
-        self.rewards.torque_limits_2.weight = -100
+        self.rewards.dof_torques_l2.weight = 0
+        self.rewards.torque_limits.weight = 0
+        self.rewards.torque_limits_2.weight = 0
         self.rewards.feet_stumble.weight = -5
         self.rewards.feet_slide.weight = -5
-        self.rewards.stand_still.weight = -1
+        self.rewards.stand_still.weight = -10
         self.rewards.feet_air_time.weight = 100
 
-        self.rewards.undesired_contacts_thigh.weight = -5
-        self.rewards.undesired_contacts_calf.weight = -5
+        self.rewards.undesired_contacts_thigh.weight = -20
+        self.rewards.undesired_contacts_calf.weight = -20
 
         #
-        # self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "dof_torques_l2",
-        #         "weight": -0.006 * 2,
-        #         "num_steps": 30,
-        #         "warmup_period": 15,
-        #     },
-        # )
-        # self.curriculum.torque_limits_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "torque_limits",
-        #         "weight": -35,
-        #         "num_steps": 30,
-        #         "warmup_period": 15,
-        #     },
-        # )
-        # self.curriculum.torque_limits_2_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "torque_limits_2",
-        #         "weight": -100,
-        #         "num_steps": 30,
-        #         "warmup_period": 15,
-        #     },
-        # )
-        # self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "feet_stumble",
-        #         "weight": -5,
-        #         "num_steps": 30,
-        #         "warmup_period": 15,
-        #     },
-        # )
+        self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "dof_torques_l2",
+                "weight": -0.006 * 5,
+                "num_steps": 25,
+                "warmup_period": 15,
+            },
+        )
+        self.curriculum.torque_limits_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "torque_limits",
+                "weight": -35,
+                "num_steps": 25,
+                "warmup_period": 15,
+            },
+        )
+        self.curriculum.torque_limits_2_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "torque_limits_2",
+                "weight": -100,
+                "num_steps": 25,
+                "warmup_period": 15,
+            },
+        )
+        self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "feet_stumble",
+                "weight": -20,
+                "num_steps": 25,
+                "warmup_period": 15,
+            },
+        )
         # self.curriculum.feet_air_time_schedule = CurriculumTermCfg(
         #     func=modify_reward_weight,
         #     params={
