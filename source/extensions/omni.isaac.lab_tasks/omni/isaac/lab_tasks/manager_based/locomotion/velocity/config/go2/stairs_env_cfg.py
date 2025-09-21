@@ -100,6 +100,7 @@ class modify_reward_weight(ManagerTermBase):
         weight: float,
         num_steps: float,
         warmup_period: float | None = None,
+        initial_weight: float | None = None,
     ) -> float:
         # update term settings
         t = env.common_step_counter / env.num_envs
@@ -107,7 +108,11 @@ class modify_reward_weight(ManagerTermBase):
             if warmup_period is None:
                 _weight = weight
             else:
-                _weight = self.lerp(0.0, weight, t=(t - num_steps) / warmup_period)
+                _weight = self.lerp(
+                    initial_weight if initial_weight is not None else 0.0,
+                    weight,
+                    t=(t - num_steps) / warmup_period,
+                )
 
             self._term_cfg.weight = _weight
             env.reward_manager.set_term_cfg(term_name, self._term_cfg)
@@ -128,7 +133,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_stairs_env_cfg_reset_base(self)
         parameters.add_relative_position_on_stairs_observation(self)
         # self.observations.policy.yaw = None
-        # self.observations.policy.relative_position = None
+        self.observations.policy.relative_position = None
         parameters.add_stair_parameters_observation(self)
 
         parameters.set_velocity_rewards_amp(self)
@@ -143,6 +148,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         self.rewards.undesired_contacts_thigh.weight = 0
         self.rewards.undesired_contacts_calf.weight = 0
+
+        self.episode_length_s = 8.0
 
         #
         self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
@@ -177,6 +184,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "feet_stumble",
                 "weight": -20,
+                "initial_weight": self.rewards.feet_stumble.weight,
                 "num_steps": 25,
                 "warmup_period": 15,
             },

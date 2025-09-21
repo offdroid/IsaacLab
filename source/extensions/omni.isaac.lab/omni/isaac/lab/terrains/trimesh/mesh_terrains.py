@@ -176,8 +176,8 @@ def _compute_stairs_parameters(
         f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
     )
     assert (
-        num_steps > 4
-    ), f"Generated low amount of stairs:  {num_steps}. Are you sure your terrain parameters are suitable?"
+        num_steps >= 3
+    ), f"Generated low amount of stairs: {num_steps}. Are you sure your terrain parameters are suitable?"
     return {
         "available_y_for_stairs": available_y_for_stairs,
         "num_steps": num_steps,

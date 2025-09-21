@@ -12,7 +12,7 @@ from ..terrain_generator_cfg import TerrainGeneratorCfg
 STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
     size=(
         15.0,
-        30.5,
+        10 + 1.4,
     ),  # make it long enough to make sure robot doesn't fall down at end of platform (1ms * 20s = 20m)
     border_width=0.2,
     num_rows=10,
@@ -26,6 +26,8 @@ STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
             step_height_range=(0.08, 0.16),  # demo was done for step height 0.14
             width_to_height_ratio=34 / 14,  # demo recorded for 34 / 14,
             y_coordinate_origin_relative_to_first_stair_step=-1.5,
+            platform_width_top=5,
+            platform_width_bottom=5,
         ),
     },
 )

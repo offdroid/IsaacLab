@@ -315,7 +315,8 @@ def set_stairs_env_cfg_cmds(cfg):
     cfg.commands.base_velocity = mdp.Global3DUniformVelocityCommandCfg(
         # inherit parameters where possible
         asset_name=cfg.commands.base_velocity.asset_name,
-        resampling_time_range=cfg.commands.base_velocity.resampling_time_range,
+        # resampling_time_range=cfg.commands.base_velocity.resampling_time_range,
+        resampling_time_range=(4, 4),
         rel_standing_envs=cfg.commands.base_velocity.rel_standing_envs,
         rel_heading_envs=cfg.commands.base_velocity.rel_heading_envs,
         heading_command=cfg.commands.base_velocity.heading_command,
@@ -425,17 +426,17 @@ def set_box_env_cfg_reset_base(cfg):
 def add_relative_position_on_stairs_observation(cfg):
     cfg.observations.policy.relative_position = ObsTerm(
         func=mdp.relative_position_on_stairs,
-        noise=Unoise(n_min=-0.1, n_max=0.1),
+        noise=Unoise(n_min=-0.2, n_max=0.2),
         clip=(-1, 1),
     )
     cfg.observations.policy.yaw = ObsTerm(
         func=mdp.yaw,
-        noise=Unoise(n_min=-0.1, n_max=0.1),
+        noise=Unoise(n_min=-0.2, n_max=0.2),
         clip=(-1, 1),
     )
     cfg.observations.policy.distance_to_stairs = ObsTerm(
         func=mdp.distance_to_stairs,
-        noise=Unoise(n_min=-0.02, n_max=0.02),
+        noise=Unoise(n_min=-0.05, n_max=0.05),
     )
 
 def add_relative_position_to_box_observation(cfg):
