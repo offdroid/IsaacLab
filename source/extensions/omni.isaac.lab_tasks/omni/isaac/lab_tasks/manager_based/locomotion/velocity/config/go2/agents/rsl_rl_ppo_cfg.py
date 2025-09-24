@@ -72,7 +72,7 @@ class UnitreeGo2AMPFlatPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
         self.amp_motion_folder = 'datasets/dummy/*'
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
         self.amp_num_preload_transitions = 2_000_000
-        self.amp_task_reward_lerp = 0.5 # weighting factor of task reward (style reward is 1-task_reward_lerp)
+        self.amp_task_reward_lerp = 0.75 # weighting factor of task reward (style reward is 1-task_reward_lerp)
         self.amp_discr_hidden_dims = [1024, 512]
 
         self.min_normalized_std = [0.05] * 4 + [0.02] * 4 +[0.05] * 4#  + [0.05] # for ResidualRL
@@ -80,7 +80,7 @@ class UnitreeGo2AMPFlatPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
         self.algorithm.amp_replay_buffer_size = 1_000_000
         self.algorithm.num_learning_epochs = 5
         self.algorithm.class_name = 'AMPPPO'
-        self.algorithm.entropy_coef = 0.01
+        # self.algorithm.entropy_coef = 0.01
         self.algorithm.num_mini_batches = 6 # 4?
         
         self.runner_class = AMPOnPolicyRunner
