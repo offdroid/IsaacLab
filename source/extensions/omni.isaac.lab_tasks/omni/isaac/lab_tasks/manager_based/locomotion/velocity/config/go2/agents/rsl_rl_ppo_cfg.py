@@ -147,3 +147,12 @@ class UnitreeGo2AMPStandingPPORunnerCfg(UnitreeGo2AMPFlatPPORunnerCfg):
         super().__post_init__()
         self.amp_task_reward_lerp = 0.5 # weighting factor of task reward (style reward is 1-task_reward_lerp)
         self.experiment_name = "unitree_go2_AMPstanding"
+        
+# This class only exists to provide self.experiment_name for logging.
+@configclass
+class UnitreeGo2TorquePPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
+    def __post_init__(self):
+        super().__post_init__()
+        self.max_iterations = int(300 * 1.5 * 2 * 2 * 1.5*2)
+        self.algorithm.entropy_coef = 0.002
+

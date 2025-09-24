@@ -354,6 +354,7 @@ class RewardsCfg:
     dof_torques_l2 = RewTerm(func=mdp.joint_torques_l2, weight=-0.0)
     dof_acc_l2 = RewTerm(func=mdp.joint_acc_l2, weight=-0.0)
     action_rate_l2 = RewTerm(func=mdp.action_rate_l2, weight=-0.0)
+    action_rate_2_l2 = RewTerm(func=mdp.action_rate_2_l2, weight=-0.0)
     feet_air_time = RewTerm(
         func=mdp.feet_air_time,
         weight=0.0,
@@ -442,11 +443,14 @@ class RewardsCfg:
     # add power penalty: "We define the mechanical COT as: Power / Weight×Velocity. P, where τ is the joint torque, ˙θ is the motor velocity.
 
     # styles
-    # style_jpos = RewTerm(func=mdp.style_jpos, weight=0.0, params={"factor": -2.0})
+    style_jpos = RewTerm(func=mdp.style_jpos, weight=0.0, params={"factor": -.02})
+    style_feet_z = RewTerm(func=mdp.style_feet_z, weight=0.0, params={"factor": -.02, "command_name": "base_velocity",})
+    style_jpos_2 = RewTerm(func=mdp.style_jpos, weight=0.0, params={"factor": -1})
     # style_jvel = RewTerm(func=mdp.style_jvel, weight=0.0, params={"factor": -0.1})
     # TODO add foot z-height style penalty
     
     base_height_l2 = RewTerm(func=mdp.base_height_l2, weight=-0.0, params={"target_height": 0.4})
+    base_height_exp = RewTerm(func=mdp.base_height_exp, weight=0.0, params={"target_height": 0.35})
     
     head_height_l2 = RewTerm(func=mdp.head_height_l2, weight=-0.0)
     feet_height_l2 = RewTerm(func=mdp.feet_height_l2, weight=-0.0)
@@ -462,7 +466,7 @@ class TerminationsCfg:
     )
     bad_orientation = DoneTerm(func=mdp.bad_orientation, params={"limit_angle": torch.pi/2})
     # joint_pos_out_of_limits = DoneTerm(
-    #     func=mdp.joint_pos_out_of_limit,
+    #    func=mdp.joint_pos_out_of_limit,
     #     params={"asset_cfg": SceneEntityCfg("robot")}
     # )
     # root_height_below_minimum = DoneTerm(

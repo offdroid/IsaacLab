@@ -410,16 +410,18 @@ class OscillatorGaitGenerator:
         # Offsets from the base frame to the neutral foot position (aligned under hips)
         self.default_foot_pos = self.hip_pos.clone()
         self.default_foot_pos[..., 2] = -0.35
+        # self.default_foot_pos[:, [0,1], 0] = 0.25
+        # self.default_foot_pos[:, [2,3], 0] = -0.2
 
         # Oscillator amplitudes for step motion
-        self.max_step_length_amp = 0.05 # m (reduced for stability)
+        self.max_step_length_amp = 0.05 # m 0.05 works
         self.step_length_ramp_up_time = 5.0
         self.step_height_amp = 0.15  # m (reduced for stability)
 
         # --- Kinematic Parameters ---
         self.thigh_length = 0.213  # meters
         self.calf_length = 0.213   # meters
-
+        
     def step(self, dt: float) -> torch.Tensor:
         """
         Advances the gait by one time step `dt` and returns target joint positions.
@@ -920,6 +922,9 @@ class PhaseActionManager(ActionManager):
         self.robot_action_dim = 12
         
         super().__init__(cfg, env)
+        
+        self._prev_prev_action = torch.zeros_like(self._action)
+        
 
         self.phases = torch.zeros((self.num_envs, 1), device=self.device)
         self.sin_cos_phases = torch.cat(
@@ -939,6 +944,7 @@ class PhaseActionManager(ActionManager):
         assert action.shape[1] == self.robot_action_dim
         
         # store the input actions
+        self._prev_prev_action[:] = self._prev_action
         self._prev_action[:] = self._action
         self._action[:] = action.to(self.device)
 
@@ -962,6 +968,11 @@ class PhaseActionManager(ActionManager):
             term_actions = action[:, idx : idx + term.action_dim] 
             term.process_actions(term_actions)
             idx += term.action_dim
+            
+    @property
+    def prev_prev_action(self) -> torch.Tensor:
+        """The previous actions sent to the environment. Shape is (num_envs, total_action_dim)."""
+        return self._prev_prev_action
 
 
     def reset(self, env_ids: Sequence[int] | None = None) -> dict[str, torch.Tensor]:
@@ -982,6 +993,44 @@ class PhaseActionManager(ActionManager):
     @property
     def freqs(self) -> torch.Tensor:
         return self._freqs
+    
+class StyleActionManager(PhaseActionManager):
+    def __init__(self, cfg: object, env: ManagerBasedEnv):
+        super().__init__(cfg, env)
+        
+        
+        
+        self.expert_jpos = torch.load("expertData_TorqueLatentActionSpace/jpos_oscillators.pt", map_location="cuda").squeeze(1)
+        self.expert_feet_z = torch.load("expertData_TorqueLatentActionSpace/feet_z_oscillators.pt", map_location="cuda").squeeze(1)
+        
+        assert len(self.expert_jpos.shape) == 2 and self.expert_jpos.shape[1] == 12, "Reference jpos must be of shape (num_frames, num_joints)"
+        
+        self.num_frames = self.expert_jpos.shape[0]
+        self._freqs = torch.ones_like(self._freqs) * 2
+        
+        self.jpos_ref = self.expert_jpos[0].expand(self.num_envs, -1) #
+        self.feet_z_ref = self.expert_feet_z[0].expand(self.num_envs, -1) #
+
+    def process_action(self, action: torch.Tensor):
+        super().process_action(action)
+        
+        # perform linear interpolation between two frames
+        unscaled_index = (self.phases / (2 * torch.pi)) * self.num_frames
+        idx0 = torch.floor(unscaled_index).long() % self.num_frames
+        idx1 = (idx0 + 1) % self.num_frames
+        alpha = (unscaled_index - torch.floor(unscaled_index))
+
+        idx0 = idx0.squeeze()
+        idx1 = idx1.squeeze()
+
+        pos0 = self.expert_jpos[idx0]
+        pos1 = self.expert_jpos[idx1]
+        self.jpos_ref = AMPLoader.slerp(pos0, pos1, alpha).clone() # used for style reward
+        
+        feet0 = self.expert_feet_z[idx0]
+        feet1 = self.expert_feet_z[idx1]
+        self.feet_z_ref = AMPLoader.slerp(feet0, feet1, alpha).clone()
+
 
 class ResidualRLActionManager(PhaseActionManager):
     def __init__(self, cfg: object, env: ManagerBasedEnv):

@@ -5,7 +5,7 @@ def get_vel_dependent_actor_latent_dim_for_action_manager_class(action_manager_c
         return 0 # no latent actions
     elif action_manager_class in ["FrequencyInterpolatedStyleActionManager", "ResidualRLActionManager"]:
         return 1 # main frequency
-    elif action_manager_class in ["ActionManager", "OscillatorActionManager"]:
+    elif action_manager_class in ["ActionManager", "OscillatorActionManager", "StyleActionManager"]:
         return 0 # Default
     else:
         raise ValueError(f"Unknown action_manager_class: {action_manager_class}")  

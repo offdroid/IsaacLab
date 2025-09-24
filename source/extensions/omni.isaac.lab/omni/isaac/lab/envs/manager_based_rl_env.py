@@ -75,7 +75,7 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         super().__init__(cfg=cfg)
         # store the render mode
         self.render_mode = render_mode
-        
+
         self.is_amp_env = getattr(cfg, "is_amp_env", False)
 
         # initialize data and constants
@@ -87,6 +87,13 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         self.metadata["render_fps"] = 1 / self.step_dt
 
         self.reset_buf = self.termination_manager.compute() # required access in action_manager
+
+        self.log_expert_data = False
+        self.jpos_log = []
+        self.feet_z_log = []
+        self.feet_indices = self.scene.articulations["robot"].find_bodies(
+            ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
+        )[0]
 
         print("[INFO]: Completed setting up the environment...")
 
@@ -161,7 +168,7 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         """
         # clip action
         action = torch.clamp(action, min=-3.5, max=3.5)
-        
+
         # process actions
         self.action_manager.process_action(action.to(self.device))
 
@@ -171,6 +178,27 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
 
         # perform physics stepping
         for _ in range(self.cfg.decimation):
+            # log if desired
+            if self.log_expert_data:
+                self.jpos_log.append(
+                    self.scene.articulations["robot"]
+                    .data.joint_pos.clone()
+                    .cpu()
+                    .numpy()
+                    .tolist()
+                )
+                self.feet_z_log.append(
+                    self.scene.articulations["robot"]
+                    .data.body_pos_w[
+                        :,
+                        self.feet_indices,
+                        2,
+                    ]
+                    .clone()
+                    .cpu()
+                    .numpy()
+                    .tolist()
+                )
             self._sim_step_counter += 1
             # set actions into buffers
             self.action_manager.apply_action()
@@ -214,17 +242,16 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # -- compute observations
         # note: done after reset to get the correct observations for reset envs
         self.obs_buf = self.observation_manager.compute()
-        
 
         return_tuple = (self.obs_buf, self.reward_buf, self.reset_terminated, self.reset_time_outs, self.extras)
-        
+
         if self.is_amp_env:
             return_tuple += (reset_env_ids,)
             return_tuple += (terminal_amp_states,)
 
         # return observations, rewards, resets and extras
         return return_tuple
-    
+
     def get_amp_observations(self):
         # do not query from observation_manager as it applies noise transformations etc.
         # TODO check
@@ -233,7 +260,6 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # z_pos = self.root_states[:, 2:3]
         # foot_pos = self.foot_positions_in_base_frame(self.dof_pos).to(self.device)
         return torch.cat((joint_pos, joint_vel), dim=-1)
-    
 
         # joint_pos = self.dof_pos
         # foot_pos = self.foot_positions_in_base_frame(self.dof_pos).to(self.device)
@@ -386,6 +412,6 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # -- termination manager
         info = self.termination_manager.reset(env_ids)
         self.extras["log"].update(info)
-        
+
         # reset the episode length buffer
         self.episode_length_buf[env_ids] = 0

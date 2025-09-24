@@ -110,6 +110,58 @@ def base_height_l2(
     # TODO: Fix this for rough-terrain.
     return torch.square(asset.data.root_pos_w[:, 2] - target_height)
 
+def base_height_exp(
+    env: ManagerBasedRLEnv, target_height: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Penalize asset height from its target using L2 squared kernel.
+
+    Note:
+        Currently, it assumes a flat terrain, i.e. the target height is in the world frame.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    # TODO: Fix this for rough-terrain.
+    base_height_error = torch.square(asset.data.root_pos_w[:, 2] - target_height)
+    
+    return torch.exp(-base_height_error / 0.4**2)
+
+def base_height_exp_box(
+    env: ManagerBasedRLEnv, target_height: float, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Penalize asset height from its target using L2 squared kernel.
+
+    Note:
+        Currently, it assumes a flat terrain, i.e. the target height is in the world frame.
+    """
+    # extract the used quantities (to enable type-hinting)
+    asset: RigidObject = env.scene[asset_cfg.name]
+    # TODO: Fix this for rough-terrain.
+    
+    # Get ground height
+    # terrain indexes for each robot
+    # row is "difficulty level", column is "terrain type"
+    # (from terrain_importer.py)
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+    box_height = env.scene.terrain.terrain_params["box_height"][rows, cols]
+    
+    # increase target base height if robot is on box
+    root_pos_y = (
+        asset.data.root_pos_w[:, 1]
+        - env.scene.env_origins[:, 1]
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "box"
+        ].y_coordinate_origin_relative_to_box_start # needs to be ADDED according to definition
+    )
+    condition = root_pos_y > -0.18 # determined by visual inspection
+    target_height = target_height + box_height * condition.float()
+    
+    
+    base_height_error = torch.square(asset.data.root_pos_w[:, 2] - target_height)
+    
+    return torch.exp(-base_height_error / 0.4**2)
+
+
 def head_height_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     asset : RigidObject = env.scene[asset_cfg.name]
     
@@ -121,7 +173,7 @@ def head_height_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEnti
     head_height_error = torch.sum(torch.square(head_height - target_height), dim=1)
     
     return torch.exp(-head_height_error / 0.3**2)
-    
+
 def feet_height_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     asset : RigidObject = env.scene[asset_cfg.name]
     
@@ -134,7 +186,7 @@ def feet_height_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEnti
     feet_height_error = torch.sum(torch.square(feet_height - target_height), dim=1)
     
     return torch.exp(-feet_height_error / 0.6**2)
-    
+
 
 def body_lin_acc_l2(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
     """Penalize the linear acceleration of bodies using L2-kernel."""
@@ -191,6 +243,17 @@ def joint_deviation_l1(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = Scene
     # compute out of limits constraints
     angle = asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]
     return torch.sum(torch.abs(angle), dim=1)
+
+# def joint_deviation_exp(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
+#     # extract the used quantities (to enable type-hinting)
+#     asset: Articulation = env.scene[asset_cfg.name]
+#     # compute the error
+
+#     error = torch.sum(
+#         torch.square(asset.data.joint_pos[:, asset_cfg.joint_ids] - asset.data.default_joint_pos[:, asset_cfg.joint_ids]),
+#         dim=1,
+#     )
+#     return torch.exp(-error / 25**2)
 
 
 def joint_pos_limits(env: ManagerBasedRLEnv, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")) -> torch.Tensor:
@@ -270,6 +333,10 @@ def action_rate_l2(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Penalize the rate of change of the actions using L2 squared kernel."""
     return torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_action), dim=1)
 
+def action_rate_2_l2(env: ManagerBasedRLEnv) -> torch.Tensor:
+    """Penalize the rate of change of the actions using L2 squared kernel."""
+    return torch.sum(torch.square(env.action_manager.action - env.action_manager.prev_prev_action), dim=1)
+
 
 def action_l2(env: ManagerBasedRLEnv) -> torch.Tensor:
     """Penalize the actions using L2 squared kernel."""
@@ -291,15 +358,100 @@ def style_jpos(
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
     asset: RigidObject = env.scene[asset_cfg.name]
-    # compute the error
-    style = torch.sum(
-        torch.square(
-            asset.data.joint_pos[:, asset_cfg.joint_ids] - env.action_manager.jpos_ref
-        ),
-        dim=1,
+    # l1
+    angle = asset.data.joint_pos - env.action_manager.jpos_ref
+    return torch.sum(torch.abs(angle), dim=1)
+
+    # exp
+    # style = torch.sum(
+    #     torch.square(
+    #         asset.data.joint_pos - env.action_manager.jpos_ref
+    #     ),
+    #     dim=1,
+    # )
+    # assert factor <= 0, "You probably want a non-positive factor"
+    # return torch.exp(factor * style)
+
+def style_feet_z(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    factor: float,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    asset: RigidObject = env.scene[asset_cfg.name]
+    # l1
+    feet_indices = asset.find_bodies(
+        ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
+    )[0]
+
+    dist = (
+        asset.data.body_pos_w[
+            :,
+            feet_indices,
+            2,
+        ]
+        - env.action_manager.feet_z_ref
     )
-    assert factor <= 0, "You probably want a non-positive factor"
-    return torch.exp(factor * style)
+    reward = torch.sum(torch.abs(dist), dim=1)
+    
+    reward *= torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.05
+    return reward
+
+def style_feet_z_box(
+    env: ManagerBasedRLEnv,
+    command_name: str,
+    factor: float,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+) -> torch.Tensor:
+    asset: RigidObject = env.scene[asset_cfg.name]
+    # l1
+    feet_indices = asset.find_bodies(
+        ["FR_foot", "FL_foot", "RR_foot", "RL_foot"]
+    )[0]
+    
+    # Get ground height
+    # terrain indexes for each robot
+    # row is "difficulty level", column is "terrain type"
+    # (from terrain_importer.py)
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+    box_height = env.scene.terrain.terrain_params["box_height"][rows, cols]
+    
+    # increase z feet reference value if robot is on box
+    root_pos_y = (
+        asset.data.root_pos_w[:, 1]
+        - env.scene.env_origins[:, 1]
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "box"
+        ].y_coordinate_origin_relative_to_box_start # needs to be ADDED according to definition
+    )
+    condition = root_pos_y > -0.2 # determined by visual inspection
+    feet_z_ref = env.action_manager.feet_z_ref
+    feet_z_ref = feet_z_ref + (box_height * condition.float()).unsqueeze(1).expand(-1, feet_z_ref.size(1))
+
+    dist = (
+        asset.data.body_pos_w[
+            :,
+            feet_indices,
+            2,
+        ]
+        - feet_z_ref
+    )
+    reward = torch.sum(torch.abs(dist), dim=1)
+    
+    reward *= torch.norm(env.command_manager.get_command(command_name)[:, :2], dim=1) > 0.05
+    return reward
+
+
+    # exp
+    # style = torch.sum(
+    #     torch.square(
+    #         asset.data.joint_pos - env.action_manager.jpos_ref
+    #     ),
+    #     dim=1,
+    # )
+    # assert factor <= 0, "You probably want a non-positive factor"
+    # return torch.exp(factor * style)
 
 def style_jvel(
     env: ManagerBasedRLEnv,
@@ -362,6 +514,27 @@ def track_lin_vel_xy_exp(
         dim=1,
     )
     return torch.exp(-lin_vel_error / std**2)
+
+def track_lin_vel_xy_exp_tolerant(
+    env: ManagerBasedRLEnv, std: float, command_name: str, asset_cfg: SceneEntityCfg = SceneEntityCfg("robot")
+) -> torch.Tensor:
+    """Reward tracking of linear velocity commands (xy axes) with tolerance threshold."""
+    asset: RigidObject = env.scene[asset_cfg.name]
+    threshold = 0.1  # tolerance in m/s
+
+    # compute error magnitude in xy-plane
+    lin_vel_error = torch.norm(
+        env.command_manager.get_command(command_name)[:, :2] - asset.data.root_lin_vel_b[:, :2],
+        dim=1,
+    )
+
+    # reward: flat at 1 inside threshold, decays outside
+    reward = torch.where(
+        lin_vel_error <= threshold,
+        torch.ones_like(lin_vel_error),
+        torch.exp(-((lin_vel_error - threshold) ** 2) / std**2),
+    )
+    return reward
 
 
 def track_ang_vel_z_exp(
