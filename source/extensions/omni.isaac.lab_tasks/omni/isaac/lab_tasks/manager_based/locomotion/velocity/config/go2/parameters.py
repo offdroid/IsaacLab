@@ -221,9 +221,9 @@ def set_velocity_rewards_amp(cfg):
     # )
     # cfg.rewards.flat_orientation_l2.weight = -25
     # cfg.rewards.feet_slide.weight = -5.0
-    cfg.rewards.dof_torques_l2.weight = -0.006
-    cfg.rewards.torque_limits.weight = -35
-    cfg.rewards.torque_limits_2.weight = -100
+    # cfg.rewards.dof_torques_l2.weight = -0.006
+    # cfg.rewards.torque_limits.weight = -35
+    # cfg.rewards.torque_limits_2.weight = -100
     # cfg.rewards.dof_acc_l2.weight = -5e-6
 
     # cfg.rewards.undesired_contacts_thigh.weight = -1.0
@@ -414,9 +414,10 @@ def set_box_env_cfg_cmds(cfg):
 def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
         "x": (-0.5, 0.5),
-        "y": (-1.7, 1.7),
-        "roll": (-math.radians(20), math.radians(20)),
-        "pitch": (-math.radians(20), math.radians(20)),
+        # "y": (-1.7, 1.7),
+        "y": (-0.2, 0.2),
+        # "roll": (-math.radians(20), math.radians(20)),
+        # "pitch": (-math.radians(20), math.radians(20)),
         "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
     }
 
@@ -434,12 +435,12 @@ def set_box_env_cfg_reset_base(cfg):
 def add_relative_position_on_stairs_observation(cfg):
     cfg.observations.policy.relative_position = ObsTerm(
         func=mdp.relative_position_on_stairs,
-        noise=Unoise(n_min=-0.2, n_max=0.2),
+        noise=Unoise(n_min=-0.1, n_max=0.1),
         clip=(-1, 1),
     )
     cfg.observations.policy.yaw = ObsTerm(
         func=mdp.yaw,
-        noise=Unoise(n_min=-0.2, n_max=0.2),
+        noise=Unoise(n_min=-0.1, n_max=0.1),
         clip=(-1, 1),
     )
     cfg.observations.policy.distance_to_stairs = ObsTerm(
