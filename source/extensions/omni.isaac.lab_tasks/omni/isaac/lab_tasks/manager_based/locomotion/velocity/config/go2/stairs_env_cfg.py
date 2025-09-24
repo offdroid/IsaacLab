@@ -143,7 +143,10 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.torque_limits_2.weight = 0
         self.rewards.feet_stumble.weight = -5
         self.rewards.feet_slide.weight = -5
+
         self.rewards.stand_still.weight = -10
+        self.rewards.feet_contact_without_cmd.weight = 0.1
+
         self.rewards.feet_air_time.weight = 100
 
         self.rewards.undesired_contacts_thigh.weight = 0
@@ -250,6 +253,28 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
 @configclass
 class AMPUnitreeGo2StairsEnvCfg_PLAY(AMPUnitreeGo2StairsEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        parameters.set_play_settings_flat(self)
+        parameters.set_play_settings_rough(self)
+
+        self.amp_motion_folder = "datasets/dummy/*"  # required otherwise it wont start; it is recomended to use same motion files as used for training
+
+
+@configclass
+class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        self.terrain_type = "shortstairs"
+        parameters.set_terrain(self)
+
+
+@configclass
+class AMPUnitreeGo2ShortStairsEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()

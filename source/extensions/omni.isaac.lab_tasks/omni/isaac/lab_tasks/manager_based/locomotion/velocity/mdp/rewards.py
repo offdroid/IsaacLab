@@ -37,6 +37,21 @@ def stand_still(
     return reward * (cmd_norm < 0.1)
 
 
+def feet_contact_without_cmd(
+    env: ManagerBasedRLEnv, sensor_cfg: SceneEntityCfg, command_name: str = "base_velocity"
+) -> torch.Tensor:
+    """
+    Reward for feet contact when the command is zero.
+    """
+    # asset: Articulation = env.scene[asset_cfg.name]
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
+    is_contact = contact_sensor.data.current_contact_time[:, sensor_cfg.body_ids] > 0
+
+    command_norm = torch.norm(env.command_manager.get_command(command_name), dim=1)
+    reward = torch.sum(is_contact, dim=-1).float()
+    return reward * (command_norm < 0.1)
+
+
 def feet_air_time(
     env: ManagerBasedRLEnv, command_name: str, sensor_cfg: SceneEntityCfg, threshold: float
 ) -> torch.Tensor:

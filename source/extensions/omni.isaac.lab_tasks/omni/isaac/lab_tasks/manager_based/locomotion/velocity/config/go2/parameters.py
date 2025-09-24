@@ -128,6 +128,14 @@ def set_terrain(cfg):
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
         cfg.curriculum.terrain_levels = None
+    elif cfg.terrain_type == "shortstairs":
+        cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
+        cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 1.4)
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].platform_width_top = 5
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].platform_width_bottom = 5
+        cfg.scene.height_scanner = None
+        cfg.observations.policy.height_scan = None
+        cfg.curriculum.terrain_levels = None
     elif cfg.terrain_type == "box":
         cfg.scene.terrain.terrain_generator = BOX_TERRAINS_CFG
         cfg.scene.height_scanner = None

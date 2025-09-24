@@ -431,6 +431,13 @@ class RewardsCfg:
             "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
         },
     )
+    feet_contact_without_cmd = RewTerm(
+        func=mdp.feet_contact_without_cmd,
+        weight=0.0,
+        params={
+            "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
+        },
+    )
     # freq_rate_l2 = RewTerm(
     #     func=mdp.freq_rate_l2,
     #     weight=-0.1,
