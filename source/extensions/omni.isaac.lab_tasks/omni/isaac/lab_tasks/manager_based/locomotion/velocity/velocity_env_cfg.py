@@ -385,7 +385,7 @@ class RewardsCfg:
 
     joint_deviation_l1 = RewTerm(
         func=joint_deviation_l1,
-        weight=-100.0,
+        weight=-0.0,
         params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*hip_joint"])},
     )
     
