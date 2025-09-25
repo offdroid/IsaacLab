@@ -54,6 +54,15 @@ class UnitreeGo2StairsEnvCfgSimpleRewardCurriculum(UnitreeGo2StairsEnvCfgSimpleR
 
         parameters.set_curriculum(self, enable=True)
 
+@configclass
+class UnitreeGo2StairsEnvCfgSimpleRewardCurriculum_PLAY(UnitreeGo2StairsEnvCfgSimpleRewardCurriculum):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        parameters.set_play_settings_flat(self)
+        parameters.set_play_settings_rough(self)
+
 
 #######################################################################
 # Stairs complex reward

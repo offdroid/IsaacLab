@@ -92,8 +92,8 @@ def set_terrain(cfg):
         cfg.curriculum.terrain_levels = None
 
         cfg.scene.height_scanner = None
-        cfg.rewards.base_height = None
         cfg.observations.policy.height_scan = None
+        cfg.rewards.base_height = None
     elif cfg.terrain_type == "box":
         cfg.scene.terrain.terrain_generator = BOX_TERRAINS_CFG
         cfg.scene.height_scanner = None
