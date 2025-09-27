@@ -139,7 +139,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_amp_settings(self)
         # update motion files
-        self.amp_motion_folder = "datasets/mocap_AMP_for_hardware/*"
+        self.amp_motion_folder = "datasets/mocap_AMP_for_hardware_trot/*"
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
         
         
