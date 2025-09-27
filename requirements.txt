@@ -110,7 +110,8 @@ regex==2024.11.6
 requests==2.32.3
 rl_games==1.6.1
 robomimic @ git+https://github.com/ARISE-Initiative/robomimic.git@9273f9cce85809b4f49cb02c6b4d4eeb2fe95abb
--e git+ssh://git@github.com/leggedrobotics/rsl_rl.git@cb86c7b15b9d2385102f5b77a1241700b44e0a06#egg=rsl_rl
+-e -e file:///workspace/isaaclab/rsl_rl
+pybullet==3.2.7
 s3transfer==0.10.4
 safetensors==0.4.5
 scikit-learn==1.6.0
