@@ -32,7 +32,7 @@ class UnitreeGo2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
-        entropy_coef=0.01 / 2,
+        entropy_coef=0.01 * (2/3),
         num_learning_epochs=5,
         num_mini_batches=4,
         learning_rate=1.0e-3,
@@ -72,7 +72,7 @@ class UnitreeGo2AMPFlatPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
         self.amp_motion_folder = 'datasets/dummy/*'
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
         self.amp_num_preload_transitions = 2_000_000
-        self.amp_task_reward_lerp = 0.625 # weighting factor of task reward (style reward is 1-task_reward_lerp)
+        self.amp_task_reward_lerp = 0.7 # weighting factor of task reward (style reward is 1-task_reward_lerp)
         self.amp_discr_hidden_dims = [1024, 512]
 
         self.min_normalized_std = [0.05] * 4 + [0.02] * 4 +[0.05] * 4#  + [0.05] # for ResidualRL
