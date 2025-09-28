@@ -138,9 +138,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_velocity_rewards_amp(self)
 
-        self.rewards.dof_torques_l2.weight = 0
-        self.rewards.torque_limits.weight = 0
-        self.rewards.torque_limits_2.weight = 0
+        self.rewards.dof_torques_l2.weight = -0.006
+        self.rewards.torque_limits.weight = -35 / 2
+        self.rewards.torque_limits_2.weight = -100 / 2
         # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
 
@@ -161,6 +161,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "weight": -0.006 * 4,
                 "num_steps": 20,
                 "warmup_period": 15,
+                "initial_weight": self.rewards.dof_torques_l2.weight,
             },
         )
         self.curriculum.torque_limits_schedule = CurriculumTermCfg(
@@ -170,6 +171,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "weight": -35,
                 "num_steps": 20,
                 "warmup_period": 15,
+                "initial_weight": self.rewards.torque_limits.weight,
             },
         )
         self.curriculum.torque_limits_2_schedule = CurriculumTermCfg(
@@ -179,6 +181,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "weight": -100,
                 "num_steps": 20,
                 "warmup_period": 15,
+                "initial_weight": self.rewards.torque_limits_2.weight,
             },
         )
         self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
