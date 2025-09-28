@@ -144,8 +144,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
 
-        self.rewards.stand_still.weight = -10
-        self.rewards.feet_contact_without_cmd.weight = 0.1
+        # self.rewards.stand_still.weight = -10
+        # self.rewards.feet_contact_without_cmd.weight = 0.1
 
         self.rewards.feet_air_time.weight = 100
 
@@ -237,7 +237,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
         self.amp_motion_folder = (
-            "datasets/fromVision_motions_DepthCam_stairs2_feetZAmpl_minimal_slow/*"
+            "datasets/fromVision_motions_DepthCamStairs_feetZAmpl_feet_forward/*"
         )
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
