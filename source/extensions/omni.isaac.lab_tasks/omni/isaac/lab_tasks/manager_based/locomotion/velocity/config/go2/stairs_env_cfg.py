@@ -149,8 +149,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         self.rewards.feet_air_time.weight = 100
 
-        self.rewards.undesired_contacts_thigh.weight = 0
-        self.rewards.undesired_contacts_calf.weight = 0
+        self.rewards.undesired_contacts_thigh.weight = -1
+        self.rewards.undesired_contacts_calf.weight = -1
 
         # self.episode_length_s = 8.0
 
@@ -179,7 +179,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "torque_limits_2",
                 "weight": -100,
-                "num_steps": 20,
+                "num_steps": 15,
                 "warmup_period": 15,
                 "initial_weight": self.rewards.torque_limits_2.weight,
             },
@@ -190,7 +190,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "feet_stumble",
                 "weight": -20,
                 "initial_weight": self.rewards.feet_stumble.weight,
-                "num_steps": 20,
+                "num_steps": 15,
                 "warmup_period": 15,
             },
         )
@@ -199,8 +199,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "undesired_contacts_thigh",
                 "weight": -20,
-                "num_steps": 10,
+                "num_steps": 15,
                 "warmup_period": 15,
+                "initial_weight": self.rewards.undesired_contacts_thigh.weight,
             },
         )
         self.curriculum.undesired_contacts_calf_schedule = CurriculumTermCfg(
@@ -210,6 +211,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "weight": -20,
                 "num_steps": 10,
                 "warmup_period": 15,
+                "initial_weight": self.rewards.undesired_contacts_calf.weight,
             },
         )
 
@@ -222,15 +224,6 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         }
         self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
         self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
-        # self.curriculum.feet_air_time_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "feet_air_time",
-        #         "weight": 100,
-        #         "num_steps": 30,
-        #         "warmup_period": 15,
-        #     }
-        # )
 
         self.scene.num_envs = 2 * 4096  # 5480
 
