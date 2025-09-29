@@ -138,9 +138,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_velocity_rewards_amp(self)
 
-        self.rewards.dof_torques_l2.weight = -0.006
-        self.rewards.torque_limits.weight = -35 / 2
-        self.rewards.torque_limits_2.weight = -100 / 2
+        # self.rewards.dof_torques_l2.weight = -0.006
+        # self.rewards.torque_limits.weight = -35
+        # self.rewards.torque_limits_2.weight = -100
         # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
 
@@ -240,7 +240,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
         self.amp_motion_folder = (
-            "datasets/fromVision_motions_DepthCamStairs_feetZAmpl_feet_forward/*"
+            "datasets/fromVision_motions_DepthCam_stairsv3fast_feetZAmpl_minimal_slow/*"
         )
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
