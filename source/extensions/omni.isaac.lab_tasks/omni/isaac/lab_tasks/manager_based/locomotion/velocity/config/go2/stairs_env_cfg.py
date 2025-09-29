@@ -240,7 +240,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
         self.amp_motion_folder = (
-            "datasets/fromVision_motions_DepthCam_stairsv4slowbutposless_feetZAmpl_minimal/*"
+            "datasets/fromVision_motions_DepthCam_stairsv3fast_feetZAmpl_minimal/*"
         )
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
