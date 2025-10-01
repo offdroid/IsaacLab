@@ -44,10 +44,10 @@ def set_play_settings_rough(cfg):
         cfg.scene.terrain.terrain_generator.num_cols = 5
         cfg.scene.terrain.terrain_generator.curriculum = False
 
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
-            0.0,
-            0.10,
-        )
+        # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+        #     0.0,
+        #     0.10,
+        # )
 
 
 def set_curriculum(cfg, enable: bool):
@@ -418,7 +418,7 @@ def set_stairs_env_cfg_reset_base(cfg):
         "y": (-0.3, 0.3),
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
-        "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
+        "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
     }
 
 def set_box_env_cfg_reset_base(cfg):
