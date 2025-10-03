@@ -144,10 +144,10 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
 
-        self.rewards.stand_still.weight = -5
-        self.rewards.feet_contact_without_cmd.weight = 0.1
+        # self.rewards.stand_still.weight = -5
+        # self.rewards.feet_contact_without_cmd.weight = 0.1
         self.rewards.feet_air_time.weight = 100
-        self.rewards.feet_on_step.weight = 0
+        self.rewards.feet_on_step.weight = 1
 
         # self.rewards.undesired_contacts_thigh.weight = -1
         # self.rewards.undesired_contacts_calf.weight = -1
