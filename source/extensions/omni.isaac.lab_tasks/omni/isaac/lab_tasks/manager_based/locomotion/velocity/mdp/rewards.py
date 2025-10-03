@@ -295,6 +295,36 @@ def action_sync(
     return reward
 
 
+def trapezoid_step(x, a, b, L=0.1):
+    """
+    Generates a smooth trapezoidal step function.
+
+    It is 0 for x <= a-L and x >= b+L, 1 for a+L <= x <= b-L,
+    and linearly ramps over the transition length L=0.1.
+
+    Args:
+        x (float or np.ndarray): The input value(s).
+        a (float): The start of the rise (where y starts increasing from 0).
+        b (float): The end of the fall (where y finishes decreasing to 0).
+        L (float): The length of the linear transition (default is 0.1).
+
+    Returns:
+        float or np.ndarray: The function value(s).
+    """
+    
+    # 1. Rising ramp (from 0 to 1 between a and a+L)
+    # The linear equation is y = (x - a) / L
+    ramp_up = torch.clamp((x - a) / L, 0.0, 1.0)
+    
+    # 2. Falling ramp (from 1 to 0 between b-L and b)
+    # The linear equation is y = 1 - (x - (b - L)) / L
+    ramp_down = torch.clamp(1.0 - (x - (b - L)) / L, 0.0, 1.0)
+    
+    # The final function is the minimum of the two ramps.
+    # This creates the flat top of 1.0 between the ramps.
+    return torch.minimum(ramp_up, ramp_down)
+
+
 def feet_on_step(
     env: ManagerBasedRLEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
@@ -310,16 +340,18 @@ def feet_on_step(
             "stairs"
         ].y_coordinate_origin_relative_to_first_stair_step
     )
-    feet_pos_y %= env.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width
-    feet_pos_y_relative %= env.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width
+    feet_pos_y_rel = feet_pos_y % env.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width
     contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
-    dist = 0.1
-    is_contact = (
+
+    is_contact: torch.Tensor= (
         contact_sensor.data.net_forces_w[
             :, torch.tensor([4, 8, 14, 18], device="cuda"), 2
         ]
         > 10
     )
-    condition = is_contact * (feet_pos_y_relative > -dist) * (feet_pos_y < 0.0)
-    reward = (feet_pos_y.clamp(-dist, 0.0) + dist) * condition
+
+    a, b, L = 0.0, 0.3, 0.1
+    is_on_stairs: torch.Tensor = feet_pos_y - (b - L) >= 0.0
+
+    reward: torch.Tensor = trapezoid_step(feet_pos_y_rel, a, b, L) * is_contact * is_on_stairs
     return torch.sum(reward, dim=1)
