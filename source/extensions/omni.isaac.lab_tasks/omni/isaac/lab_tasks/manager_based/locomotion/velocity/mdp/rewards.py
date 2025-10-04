@@ -325,6 +325,24 @@ def trapezoid_step(x, a, b, L=0.1):
     return torch.minimum(ramp_up, ramp_down)
 
 
+def trapezoid_step_asymmetric(x, a, b, L_a=0.1, L_b=0.1):
+    """
+    Generates a smooth trapezoidal step function.
+    """
+
+    # 1. Rising ramp (from 0 to 1 between a and a+L)
+    # The linear equation is y = (x - a) / L
+    ramp_up = torch.clamp((x - a) / L_a, 0.0, 1.0)
+
+    # 2. Falling ramp (from 1 to 0 between b-L and b)
+    # The linear equation is y = 1 - (x - (b - L)) / L
+    ramp_down = torch.clamp(1.0 - (x - (b - L_b)) / L_b, 0.0, 1.0)
+
+    # The final function is the minimum of the two ramps.
+    # This creates the flat top of 1.0 between the ramps.
+    return torch.minimum(ramp_up, ramp_down)
+
+
 def feet_on_step(
     env: ManagerBasedRLEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
@@ -353,10 +371,10 @@ def feet_on_step(
         > 10
     )
 
-    a, b, L = 0.0, 0.3, 0.1
-    is_on_stairs: torch.Tensor = feet_pos_y - (b - L) >= 0.0
+    a, b, L_a, L_b = 0.0, 0.3, 0.05, 0.025
+    is_on_stairs: torch.Tensor = feet_pos_y - (b - L_b) >= 0.0
 
     reward: torch.Tensor = (
-        trapezoid_step(feet_pos_y_rel, a, b, L) * is_contact * is_on_stairs
+        trapezoid_step_asymmetric(feet_pos_y_rel, a, b, L_a, L_b) * is_contact * is_on_stairs
     )
     return torch.sum(reward, dim=1)
