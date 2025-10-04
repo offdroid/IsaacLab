@@ -32,7 +32,7 @@ class UnitreeGo2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         value_loss_coef=1.0,
         use_clipped_value_loss=True,
         clip_param=0.2,
-        entropy_coef=0.001,
+        entropy_coef=0.01,
         num_learning_epochs=5,
         num_mini_batches=4,
         learning_rate=1.0e-3,
@@ -80,7 +80,7 @@ class UnitreeGo2AMPFlatPPORunnerCfg(UnitreeGo2FlatPPORunnerCfg):
         self.algorithm.amp_replay_buffer_size = 1_000_000
         self.algorithm.num_learning_epochs = 5
         self.algorithm.class_name = 'AMPPPO'
-        self.algorithm.entropy_coef = 0.01
+        # self.algorithm.entropy_coef = 0.01
         self.algorithm.num_mini_batches = 6 # 4?
         
         self.runner_class = AMPOnPolicyRunner

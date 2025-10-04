@@ -132,25 +132,25 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_stairs_env_cfg_cmds(self)
         parameters.set_stairs_env_cfg_reset_base(self)
         parameters.add_relative_position_on_stairs_observation(self)
-        # self.observations.policy.yaw = None
-        self.observations.policy.relative_position = None
+        self.observations.policy.yaw = None
+        # self.observations.policy.relative_position = None
         parameters.add_stair_parameters_observation(self)
 
         parameters.set_velocity_rewards_amp(self)
 
-        self.rewards.dof_torques_l2.weight = 0
-        self.rewards.torque_limits.weight = 0
-        self.rewards.torque_limits_2.weight = 0
-        self.rewards.feet_stumble.weight = -5
-        self.rewards.feet_slide.weight = -5
+        # self.rewards.dof_torques_l2.weight = -0.006
+        # self.rewards.torque_limits.weight = -35
+        # self.rewards.torque_limits_2.weight = -100
+        # self.rewards.feet_stumble.weight = -5
+        # self.rewards.feet_slide.weight = -5
 
-        self.rewards.stand_still.weight = -10
-        self.rewards.feet_contact_without_cmd.weight = 0.1
-
+        # self.rewards.stand_still.weight = -5
+        # self.rewards.feet_contact_without_cmd.weight = 0.1
         self.rewards.feet_air_time.weight = 100
+        self.rewards.feet_on_step.weight = 5
 
-        self.rewards.undesired_contacts_thigh.weight = 0
-        self.rewards.undesired_contacts_calf.weight = 0
+        # self.rewards.undesired_contacts_thigh.weight = -1
+        # self.rewards.undesired_contacts_calf.weight = -1
 
         # self.episode_length_s = 8.0
 
@@ -159,56 +159,71 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "dof_torques_l2",
                 "weight": -0.006 * 5,
-                "num_steps": 25,
-                "warmup_period": 15,
+                "num_steps": 15,
+                "warmup_period": 20,
+                "initial_weight": self.rewards.dof_torques_l2.weight,
             },
         )
         self.curriculum.torque_limits_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "torque_limits",
-                "weight": -35,
-                "num_steps": 25,
-                "warmup_period": 15,
+                "weight": -35 * 4,
+                "num_steps": 15,
+                "warmup_period": 20,
+                "initial_weight": self.rewards.torque_limits.weight,
             },
         )
         self.curriculum.torque_limits_2_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "torque_limits_2",
-                "weight": -100,
-                "num_steps": 25,
-                "warmup_period": 15,
+                "weight": -100 * 4,
+                "num_steps": 15,
+                "warmup_period": 20,
+                "initial_weight": self.rewards.torque_limits_2.weight,
             },
         )
         self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "feet_stumble",
-                "weight": -20,
+                "weight": -20 * 4,
                 "initial_weight": self.rewards.feet_stumble.weight,
-                "num_steps": 25,
-                "warmup_period": 15,
+                "num_steps": 15,
+                "warmup_period": 20,
             },
         )
         self.curriculum.undesired_contacts_thigh_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "undesired_contacts_thigh",
-                "weight": -20,
-                "num_steps": 10,
+                "weight": -20 * 3,
+                "num_steps": 15,
                 "warmup_period": 15,
+                "initial_weight": self.rewards.undesired_contacts_thigh.weight,
             },
         )
         self.curriculum.undesired_contacts_calf_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "undesired_contacts_calf",
-                "weight": -20,
-                "num_steps": 10,
+                "weight": -20 * 3,
+                "num_steps": 15,
                 "warmup_period": 15,
+                "initial_weight": self.rewards.undesired_contacts_calf.weight,
             },
         )
+        # self.curriculum.feet_on_step_schedule = CurriculumTermCfg(
+        #     func=modify_reward_weight,
+        #     params={
+        #         "term_name": "feet_on_step",
+        #         "weight": 0.1,
+        #         "num_steps": 0,
+        #         "warmup_period": 15,
+        #         "initial_weight": self.rewards.feet_on_step.weight,
+        #     },
+        # )
 
         self.events.push_robot.params["velocity_range"] = {
             "x": (-1, 1),
@@ -219,15 +234,6 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         }
         self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
         self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
-        # self.curriculum.feet_air_time_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "feet_air_time",
-        #         "weight": 100,
-        #         "num_steps": 30,
-        #         "warmup_period": 15,
-        #     }
-        # )
 
         self.scene.num_envs = 2 * 4096  # 5480
 
@@ -237,7 +243,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
         self.amp_motion_folder = (
-            "datasets/fromVision_motions_DepthCam_stairs2_feetZAmpl_minimal_stairs3_slow/*"
+            "datasets/fromVision_motions_DepthCam_stairsv3fast_feetZAmpl_minimal_stairs2_slow/*"
         )
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 

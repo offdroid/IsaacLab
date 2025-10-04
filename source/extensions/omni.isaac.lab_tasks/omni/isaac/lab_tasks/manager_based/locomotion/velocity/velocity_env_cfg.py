@@ -438,6 +438,10 @@ class RewardsCfg:
             "sensor_cfg": SceneEntityCfg("contact_forces", body_names=".*_foot"),
         },
     )
+    feet_on_step = RewTerm(
+        func=mdp.feet_on_step,
+        weight=0.0,
+    )
     # freq_rate_l2 = RewTerm(
     #     func=mdp.freq_rate_l2,
     #     weight=-0.1,
