@@ -375,6 +375,6 @@ def feet_on_step(
     is_on_stairs: torch.Tensor = feet_pos_y - (b - L_b) >= 0.0
 
     reward: torch.Tensor = (
-        trapezoid_step_asymmetric(feet_pos_y_rel, a, b, L_a, L_b) * is_contact * is_on_stairs
+        (1 - trapezoid_step_asymmetric(feet_pos_y_rel, a, b, L_a, L_b)) * is_contact * is_on_stairs
     )
     return torch.sum(reward, dim=1)
