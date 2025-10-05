@@ -152,7 +152,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "feet_on_step",
-                "weight": -5,
+                "weight": -15,
                 "num_steps": 15,
                 "warmup_period": 20,
                 "initial_weight": self.rewards.feet_on_step.weight,
