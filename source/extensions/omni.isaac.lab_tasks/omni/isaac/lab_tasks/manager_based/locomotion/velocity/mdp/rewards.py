@@ -349,21 +349,30 @@ def feet_on_step(
     sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_forces", body_names=".*_foot"),
 ) -> torch.Tensor:
     asset: RigidObject = env.scene[asset_cfg.name]
-    # l1
+
+    a, L_a, L_b = 0.0, 0.05, 0.05
+
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+    n = env.scene.terrain.terrain_params["num_steps"][rows, cols]
+    b = env.scene.terrain.terrain_params["step_width"][rows, cols]
+
     feet_indices = asset.find_bodies(["FR_foot", "FL_foot", "RR_foot", "RL_foot"])[0]
     feet_pos_y = (
         asset.data.body_pos_w[:, feet_indices, 1]
-        + env.scene.env_origins[:, 1].unsqueeze(1)
+        - env.scene.env_origins[:, 1].unsqueeze(1)
         + env.cfg.scene.terrain.terrain_generator.sub_terrains[
             "stairs"
         ].y_coordinate_origin_relative_to_first_stair_step
     )
+    n = n.unsqueeze(-1)
+    b = b.unsqueeze(-1)
     feet_pos_y_rel = torch.fmod(
-        feet_pos_y,
-        env.cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width,
+        feet_pos_y + b,
+        b,
     )
-    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
 
+    contact_sensor: ContactSensor = env.scene.sensors[sensor_cfg.name]
     is_contact: torch.Tensor = (
         contact_sensor.data.net_forces_w[
             :, torch.tensor([4, 8, 14, 18], device="cuda"), 2
@@ -371,10 +380,9 @@ def feet_on_step(
         > 10
     )
 
-    a, b, L_a, L_b = 0.0, 0.3, 0.05, 0.025
-    is_on_stairs: torch.Tensor = feet_pos_y - (b - L_b) >= 0.0
-
+    is_on_stairs: torch.Tensor = torch.logical_and(feet_pos_y + L_b >= 0.0, feet_pos_y + L_b <= n * b)
     reward: torch.Tensor = (
         (1 - trapezoid_step_asymmetric(feet_pos_y_rel, a, b, L_a, L_b)) * is_contact * is_on_stairs
     )
+
     return torch.sum(reward, dim=1)

@@ -149,7 +149,7 @@ def pyramid_stairs_terrain(
 
 
 def _compute_stairs_parameters(
-    difficulty: float, cfg: mesh_terrains_cfg.MeshStairsTerrainCfg
+    difficulty: float, cfg: mesh_terrains_cfg.MeshStairsTerrainCfg, verbose=False,
 ):
     step_height = cfg.step_height_range[0] + difficulty * (
         cfg.step_height_range[1] - cfg.step_height_range[0]
@@ -172,9 +172,10 @@ def _compute_stairs_parameters(
     ), "Insufficient Y-space for steps after accounting for platforms and borders. Y space equals width!"
 
     num_steps = int(available_y_for_stairs // step_width)
-    print(
-        f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
-    )
+    if verbose:
+        print(
+            f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
+        )
     assert (
         num_steps >= 3
     ), f"Generated low amount of stairs: {num_steps}. Are you sure your terrain parameters are suitable?"
@@ -190,7 +191,7 @@ def stairs_terrain(
     difficulty: float, cfg: mesh_terrains_cfg.MeshStairsTerrainCfg
 ) -> tuple[list[trimesh.Trimesh], np.ndarray]:
     # Resolve terrain parameters
-    terrain_params = _compute_stairs_parameters(difficulty, cfg)
+    terrain_params = _compute_stairs_parameters(difficulty, cfg, verbose=True)
     available_y_for_stairs = terrain_params["available_y_for_stairs"]
     num_steps = terrain_params["num_steps"]
     step_width, step_height = (
