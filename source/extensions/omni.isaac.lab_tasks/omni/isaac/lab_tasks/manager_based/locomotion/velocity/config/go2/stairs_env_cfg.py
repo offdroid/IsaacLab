@@ -153,7 +153,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "feet_on_step",
                 "weight": -60,
-                "num_steps": 5,
+                "num_steps": 10,
                 "warmup_period": 10,
                 "initial_weight": self.rewards.feet_on_step.weight,
             },
@@ -167,7 +167,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "dof_torques_l2",
                 "weight": -0.006 * 5,
-                "num_steps": 5,
+                "num_steps": 10,
                 "warmup_period": 10,
                 "initial_weight": self.rewards.dof_torques_l2.weight,
             },
@@ -177,7 +177,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "torque_limits",
                 "weight": -35 * 4,
-                "num_steps": 15,
+                "num_steps": 10,
                 "warmup_period": 10,
                 "initial_weight": self.rewards.torque_limits.weight,
             },
@@ -187,7 +187,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "torque_limits_2",
                 "weight": -100 * 4,
-                "num_steps": 5,
+                "num_steps": 10,
                 "warmup_period": 10,
                 "initial_weight": self.rewards.torque_limits_2.weight,
             },
@@ -198,7 +198,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "feet_stumble",
                 "weight": -20 * 4,
                 "initial_weight": self.rewards.feet_stumble.weight,
-                "num_steps": 5,
+                "num_steps": 10,
                 "warmup_period": 20,
             },
         )
@@ -207,7 +207,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "undesired_contacts_thigh",
                 "weight": -20 * 3,
-                "num_steps": 15,
+                "num_steps": 10,
                 "warmup_period": 10,
                 "initial_weight": self.rewards.undesired_contacts_thigh.weight,
             },
@@ -217,7 +217,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "undesired_contacts_calf",
                 "weight": -20 * 3,
-                "num_steps": 5,
+                "num_steps": 10,
                 "warmup_period": 10,
                 "initial_weight": self.rewards.undesired_contacts_calf.weight,
             },
