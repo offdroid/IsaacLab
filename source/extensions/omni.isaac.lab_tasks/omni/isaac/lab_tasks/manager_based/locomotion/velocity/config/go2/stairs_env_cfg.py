@@ -297,6 +297,10 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
             "yaw": (-0.5, 0.5),
         }
         self.events.push_robot.interval_range_s = (1.0, 5.0)
+        self.curriculum.terrain_levels = CurrTerm(
+            func=mdp.terrain_levels_vel,
+            params={"custom_required_distance_for_move_up": 0.2 * 8},
+        )
 
 @configclass
 class AMPUnitreeGo2ShortStairsEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):
