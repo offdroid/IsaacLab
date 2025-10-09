@@ -144,15 +144,15 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
 
-        self.rewards.stand_still.weight = -5
-        self.rewards.feet_contact_without_cmd.weight = 0.1
+        # self.rewards.stand_still.weight = -5
+        # self.rewards.feet_contact_without_cmd.weight = 0.1
         self.rewards.feet_air_time.weight = 100
         self.rewards.feet_on_step.weight = 0
         self.curriculum.feet_on_step_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "feet_on_step",
-                "weight": -10,
+                "weight": -50,
                 "num_steps": 15,
                 "warmup_period": 20,
                 "initial_weight": self.rewards.feet_on_step.weight,
@@ -162,7 +162,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.undesired_contacts_thigh.weight = -1
         # self.rewards.undesired_contacts_calf.weight = -1
 
-        # self.episode_length_s = 8.0
+        self.episode_length_s = 7.0
 
         self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
