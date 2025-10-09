@@ -149,7 +149,9 @@ def pyramid_stairs_terrain(
 
 
 def _compute_stairs_parameters(
-    difficulty: float, cfg: mesh_terrains_cfg.MeshStairsTerrainCfg, verbose=False,
+    difficulty: float,
+    cfg: mesh_terrains_cfg.MeshStairsTerrainCfg,
+    verbose=False,
 ):
     step_height = cfg.step_height_range[0] + difficulty * (
         cfg.step_height_range[1] - cfg.step_height_range[0]
@@ -167,18 +169,18 @@ def _compute_stairs_parameters(
         - 2 * cfg.border_width
         - (cfg.platform_width_bottom + cfg.platform_width_top)
     )
-    assert (
-        available_y_for_stairs > 0
-    ), "Insufficient Y-space for steps after accounting for platforms and borders. Y space equals width!"
+    assert available_y_for_stairs > 0, (
+        "Insufficient Y-space for steps after accounting for platforms and borders. Y space equals width!"
+    )
 
     num_steps = int(available_y_for_stairs // step_width)
     if verbose:
         print(
             f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
         )
-    assert (
-        num_steps >= 3
-    ), f"Generated low amount of stairs: {num_steps}. Are you sure your terrain parameters are suitable?"
+    assert num_steps >= 3, (
+        f"Generated low amount of stairs: {num_steps}. Are you sure your terrain parameters are suitable?"
+    )
     return {
         "available_y_for_stairs": available_y_for_stairs,
         "num_steps": num_steps,
@@ -237,7 +239,7 @@ def stairs_terrain(
     # Create steps
     for step in range(num_steps):
         height_noise = torch.randn([]) * 0.05 * step_height
-        width_noise = torch.randn([]) * 0.01 * step_width
+        width_noise = torch.randn([]) * 0.01 * step_width * 0
         _step_height = step_height + height_noise
         _step_width = step_width + width_noise
 
@@ -281,7 +283,9 @@ def stairs_terrain(
         + cfg.platform_width_top / 2,
         rel_tol=1e-5,
         abs_tol=1e-5,
-    ), "The y coordinate of the center of the top platform doesnt add up. Check terrain configuration and terrain generation logic."
+    ), (
+        "The y coordinate of the center of the top platform doesnt add up. Check terrain configuration and terrain generation logic."
+    )
 
     # Top platform
     top_platform_center = [
@@ -299,9 +303,9 @@ def stairs_terrain(
     meshes_list.append(top_platform)
 
     # Terrain origin is at the bottom plane shortly before the stairs start
-    assert (
-        cfg.y_coordinate_origin_relative_to_first_stair_step < 0
-    ), "This variable should be negative so that the robot is spawned right in front of the stairs. Recommended valu: -0.5."
+    assert cfg.y_coordinate_origin_relative_to_first_stair_step < 0, (
+        "This variable should be negative so that the robot is spawned right in front of the stairs. Recommended valu: -0.5."
+    )
     origin = np.array(
         [
             bottom_platform_center[0],
