@@ -152,9 +152,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "feet_on_step",
-                "weight": -50,
-                "num_steps": 15,
-                "warmup_period": 20,
+                "weight": -60,
+                "num_steps": 5,
+                "warmup_period": 10,
                 "initial_weight": self.rewards.feet_on_step.weight,
             },
         )
@@ -162,15 +162,13 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.undesired_contacts_thigh.weight = -1
         # self.rewards.undesired_contacts_calf.weight = -1
 
-        self.episode_length_s = 7.0
-
         self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "dof_torques_l2",
                 "weight": -0.006 * 5,
-                "num_steps": 15,
-                "warmup_period": 20,
+                "num_steps": 5,
+                "warmup_period": 10,
                 "initial_weight": self.rewards.dof_torques_l2.weight,
             },
         )
@@ -180,7 +178,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "torque_limits",
                 "weight": -35 * 4,
                 "num_steps": 15,
-                "warmup_period": 20,
+                "warmup_period": 10,
                 "initial_weight": self.rewards.torque_limits.weight,
             },
         )
@@ -189,8 +187,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "torque_limits_2",
                 "weight": -100 * 4,
-                "num_steps": 15,
-                "warmup_period": 20,
+                "num_steps": 5,
+                "warmup_period": 10,
                 "initial_weight": self.rewards.torque_limits_2.weight,
             },
         )
@@ -200,7 +198,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "feet_stumble",
                 "weight": -20 * 4,
                 "initial_weight": self.rewards.feet_stumble.weight,
-                "num_steps": 15,
+                "num_steps": 5,
                 "warmup_period": 20,
             },
         )
@@ -210,7 +208,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "undesired_contacts_thigh",
                 "weight": -20 * 3,
                 "num_steps": 15,
-                "warmup_period": 15,
+                "warmup_period": 10,
                 "initial_weight": self.rewards.undesired_contacts_thigh.weight,
             },
         )
@@ -219,8 +217,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             params={
                 "term_name": "undesired_contacts_calf",
                 "weight": -20 * 3,
-                "num_steps": 15,
-                "warmup_period": 15,
+                "num_steps": 5,
+                "warmup_period": 10,
                 "initial_weight": self.rewards.undesired_contacts_calf.weight,
             },
         )
@@ -242,8 +240,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             "pitch": (-1, 1),
             "yaw": (-1, 1),
         }
-        self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
-        self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
+        # self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
+        # self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
 
         self.scene.num_envs = 2 * 4096  # 5480
 
@@ -288,6 +286,17 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         self.terrain_type = "shortstairs"
         parameters.set_terrain(self)
 
+        self.episode_length_s = 7.0
+
+        self.events.push_robot.params["velocity_range"] = {
+            "x": (-1, 1),
+            "y": (-1, 1),
+            "z": (-1, 1),
+            "roll": (-0.5, 0.5),
+            "pitch": (-0.5, 0.5),
+            "yaw": (-0.5, 0.5),
+        }
+        self.events.push_robot.interval_range_s = (1.0, 5.0)
 
 @configclass
 class AMPUnitreeGo2ShortStairsEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):

@@ -127,15 +127,15 @@ def set_terrain(cfg):
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
-        cfg.curriculum.terrain_levels = None
     elif cfg.terrain_type == "shortstairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 1.4)
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].platform_width_top = 5
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].platform_width_bottom = 5
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].y_coordinate_origin_relative_to_first_stair_step = -0.5
+        cfg.commands.base_velocity.resample_epsiode_length = (3.5, 3.5)
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
-        cfg.curriculum.terrain_levels = None
     elif cfg.terrain_type == "box":
         cfg.scene.terrain.terrain_generator = BOX_TERRAINS_CFG
         cfg.scene.height_scanner = None
@@ -414,8 +414,7 @@ def set_box_env_cfg_cmds(cfg):
 def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
         "x": (-0.5, 0.5),
-        # "y": (-1.7, 1.7),
-        "y": (-0.3, 0.3),
+        "y": (-0.5, 0.2),
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
         "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
