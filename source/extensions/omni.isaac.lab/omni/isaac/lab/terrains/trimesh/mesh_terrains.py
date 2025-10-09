@@ -156,7 +156,7 @@ def _compute_stairs_parameters(
     step_height = cfg.step_height_range[0] + difficulty * (
         cfg.step_height_range[1] - cfg.step_height_range[0]
     )
-    if cfg.step_width is not None:
+    if cfg.mode == "fixed":
         step_height = cfg.step_height_range[0] + difficulty * (
             cfg.step_height_range[1] - cfg.step_height_range[0]
         )
@@ -197,7 +197,7 @@ def _compute_stairs_parameters(
         print(
             f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
         )
-    assert num_steps >= 3, (
+    assert num_steps >= 2, (
         f"Generated low amount of stairs: {num_steps}. Are you sure your terrain parameters are suitable?"
     )
     return {

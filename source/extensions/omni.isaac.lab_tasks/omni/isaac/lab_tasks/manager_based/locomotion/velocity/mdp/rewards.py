@@ -347,10 +347,10 @@ def feet_on_step(
     env: ManagerBasedRLEnv,
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
     sensor_cfg: SceneEntityCfg = SceneEntityCfg("contact_forces", body_names=".*_foot"),
+    distance_a: float = 0.05,
+    distance_b: float = 0.05,
 ) -> torch.Tensor:
     asset: RigidObject = env.scene[asset_cfg.name]
-
-    a, L_a, L_b = 0.0, 0.05, 0.05
 
     rows = env.scene.terrain.terrain_levels
     cols = env.scene.terrain.terrain_types
@@ -380,9 +380,13 @@ def feet_on_step(
         > 10
     )
 
-    is_on_stairs: torch.Tensor = torch.logical_and(feet_pos_y + L_b >= 0.0, feet_pos_y + L_b <= n * b)
+    is_on_stairs: torch.Tensor = torch.logical_and(
+        feet_pos_y + distance_b >= 0.0, feet_pos_y + distance_b <= n * b
+    )
     reward: torch.Tensor = (
-        (1 - trapezoid_step_asymmetric(feet_pos_y_rel, a, b, L_a, L_b)) * is_contact * is_on_stairs
+        (1 - trapezoid_step_asymmetric(feet_pos_y_rel, 0.0, b, distance_a, distance_b))
+        * is_contact
+        * is_on_stairs
     )
 
     return torch.sum(reward, dim=1)

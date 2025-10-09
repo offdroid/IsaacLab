@@ -450,6 +450,10 @@ class RewardsCfg:
     feet_on_step = RewTerm(
         func=mdp.feet_on_step,
         weight=0.0,
+        params={
+            "distance_a": 0.05,
+            "distance_b": 0.05,
+        },
     )
     # freq_rate_l2 = RewTerm(
     #     func=mdp.freq_rate_l2,

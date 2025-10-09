@@ -278,6 +278,42 @@ class AMPUnitreeGo2StairsEnvCfg_PLAY(AMPUnitreeGo2StairsEnvCfg):
 
 
 @configclass
+class AMPUnitreeGo2StairsAlignmentEnvCfg(AMPUnitreeGo2StairsEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        self.terrain_type = "stairs"
+        parameters.set_terrain(self)
+        parameters.set_curriculum(self, False)
+        self.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+            0.0,
+            0.0,
+        )
+
+        self.rewards.feet_on_step.weight = 0
+        self.rewards.feet_on_step.params["distance_a"] = 0.01
+        self.rewards.feet_on_step.params["distance_b"] = 0.01
+        self.curriculum.feet_on_step_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "feet_on_step",
+                "weight": 20,
+                "num_steps": 5,
+                "warmup_period": 5,
+                "initial_weight": self.rewards.feet_on_step.weight,
+            },
+        )
+
+        self.episode_length_s = 5.0
+
+        self.amp_motion_folder = (
+            "datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_minimal_feet_forward/*"
+        )
+        self.amp_motion_files = glob.glob(self.amp_motion_folder)
+
+
+@configclass
 class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
     def __post_init__(self):
         # post init of parent
