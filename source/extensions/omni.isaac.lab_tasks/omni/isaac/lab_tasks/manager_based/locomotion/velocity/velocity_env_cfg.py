@@ -280,6 +280,15 @@ class EventCfg:
         # params={"velocity_range": {"x": (-0.5, 0.5), "y": (-0.5, 0.5)}},
         params={"velocity_range": {"x": (-1.0, 1.0), "y": (-1.0, 1.0)}}, # if DR doesnt work, potentially increase this parameter. For AMP for hardware this is +-1.3m/s
     )
+    push_feet = EventTerm(
+        func=mdp.push_by_setting_velocity,
+        mode="interval",
+        interval_range_s=(10.0, 15.0),
+        params={
+            "velocity_range": {"x": (0.0, 0.0), "y": (0.0, 0.0), },
+            "asset_cfg": SceneEntityCfg("robot", body_names=".*_foot"),
+        }
+    )
     
     reset_gravity = EventTerm(
         func=mdp.randomize_physics_scene_gravity,
