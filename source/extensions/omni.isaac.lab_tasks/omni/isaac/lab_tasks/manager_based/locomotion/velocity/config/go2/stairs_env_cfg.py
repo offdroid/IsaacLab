@@ -199,7 +199,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "weight": -20 * 4,
                 "initial_weight": self.rewards.feet_stumble.weight,
                 "num_steps": 10,
-                "warmup_period": 20,
+                "warmup_period": 10,
             },
         )
         self.curriculum.undesired_contacts_thigh_schedule = CurriculumTermCfg(
