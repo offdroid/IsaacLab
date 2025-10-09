@@ -297,13 +297,13 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
             "pitch": (-0.5, 0.5),
             "yaw": (-0.1, 0.1),
         }
-        self.events.push_robot.interval_range_s = (3.0, 5.0)
+        self.events.push_robot.interval_range_s = (4.0, 6.0)
         # Random feet pushes
         self.events.push_feet.params["velocity_range"] = {
             "x": (-0.2, 0.2),
             "y": (-0.2, 0.2),
         }
-        self.events.push_feet.interval_range_s = (3.0, 5.0)
+        self.events.push_feet.interval_range_s = (4.0, 6.0)
 
         self.curriculum.terrain_levels.params["custom_required_distance_for_move_up"] = 0.3 * 8 * 3 / 4
 

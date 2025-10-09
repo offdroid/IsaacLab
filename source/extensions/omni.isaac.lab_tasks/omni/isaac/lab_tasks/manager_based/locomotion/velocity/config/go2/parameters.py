@@ -91,7 +91,7 @@ def set_curriculum(cfg, enable: bool):
         )
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
-            0.00,
+            0.14,
             0.20,
         )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = None

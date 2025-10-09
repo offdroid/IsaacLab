@@ -157,12 +157,31 @@ def _compute_stairs_parameters(
         cfg.step_height_range[1] - cfg.step_height_range[0]
     )
     if cfg.step_width is not None:
+        step_height = cfg.step_height_range[0] + difficulty * (
+            cfg.step_height_range[1] - cfg.step_height_range[0]
+        )
         step_width = cfg.step_width
-    else:
+    elif cfg.mode == "ratio":
+        step_height = cfg.step_height_range[0] + difficulty * (
+            cfg.step_height_range[1] - cfg.step_height_range[0]
+        )
         step_width = (
             step_height * cfg.width_to_height_ratio
         )  # demo was collected for a stair of step height 14cm and step width 34 cm. We want to keep that ratio for all generated stairs.
         step_width = max(0.2, step_width)
+    elif cfg.mode in ["norm", "scaled_norm"]:
+        # Pick a random unscaled step height, at first ignoring the curriculum
+        step_height = cfg.step_height_range[0] + torch.rand([]) * (
+            cfg.step_height_range[1] - cfg.step_height_range[0]
+        )
+        # Sample a random constraint from 60cm to 66cm: 2 * height + width = constraint
+        constraint = 0.6 + torch.rand([]) * 0.06
+        step_width = constraint - 2 * step_height
+        if cfg.mode == "scaled_norm":
+            # Finally scale for with difficulty coefficient
+            step_height *= difficulty
+    else:
+        raise ValueError(f"Unknonw mode {cfg.mode}")
 
     available_y_for_stairs = (
         cfg.size[1]
