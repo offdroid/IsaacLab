@@ -153,9 +153,6 @@ def _compute_stairs_parameters(
     cfg: mesh_terrains_cfg.MeshStairsTerrainCfg,
     verbose=False,
 ):
-    step_height = cfg.step_height_range[0] + difficulty * (
-        cfg.step_height_range[1] - cfg.step_height_range[0]
-    )
     if cfg.mode == "fixed":
         step_height = cfg.step_height_range[0] + difficulty * (
             cfg.step_height_range[1] - cfg.step_height_range[0]

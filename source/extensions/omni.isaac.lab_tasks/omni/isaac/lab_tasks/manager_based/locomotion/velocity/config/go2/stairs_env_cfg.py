@@ -74,6 +74,155 @@ class UnitreeGo2StairsEnvCfgComplexReward_PLAY(UnitreeGo2StairsEnvCfgComplexRewa
 
 #######################################################################
 # Stairs AMP
+from typing import ClassVar
+
+
+class modify_env_param(ManagerTermBase):
+    NO_CHANGE: ClassVar = object()
+    """Special token to indicate no change in the value to be set.
+
+    This token is used to signal that the `modify_fn` did not produce a new value. It can
+    be returned by the `modify_fn` to indicate that the current value should remain unchanged.
+    """
+
+    def __init__(self, cfg: CurriculumTermCfg, env: ManagerBasedRLEnv):
+        super().__init__(cfg, env)
+        # resolve term configuration
+        if "address" not in cfg.params:
+            raise ValueError(
+                "The 'address' parameter must be specified in the curriculum term configuration."
+            )
+
+        # store current address
+        self._address: str = cfg.params["address"]
+        # store accessor functions
+        self._get_fn: callable = None
+        self._set_fn: callable = None
+
+    def __del__(self):
+        """Destructor to clean up the compiled functions."""
+        # clear the getter and setter functions
+        self._get_fn = None
+        self._set_fn = None
+        self._container = None
+        self._last_path = None
+
+    """
+    Operations.
+    """
+
+    def __call__(
+        self,
+        env: ManagerBasedRLEnv,
+        env_ids: Sequence[int],
+        address: str,
+        modify_fn: callable,
+        modify_params: dict | None = None,
+    ):
+        # fetch the getter and setter functions if not already compiled
+        if not self._get_fn:
+            self._get_fn, self._set_fn = self._process_accessors(
+                self._env, self._address
+            )
+
+        # resolve none type
+        modify_params = {} if modify_params is None else modify_params
+
+        # get the current value of the target attribute
+        data = self._get_fn()
+        # modify the value using the provided function
+        new_val = modify_fn(self._env, env_ids, data, **modify_params)
+        # set the modified value back to the target attribute
+        # note: if the modify_fn return NO_CHANGE signal, we do not invoke self.set_fn
+        if new_val is not self.NO_CHANGE:
+            self._set_fn(new_val)
+
+    """
+    Helper functions.
+    """
+
+    def _process_accessors(
+        self, root: ManagerBasedRLEnv, path: str
+    ) -> tuple[callable, callable]:
+        """Process and return the (getter, setter) functions for a dotted attribute path.
+
+        This function resolves a dotted path string to an attribute in the given root object.
+        The dotted path can include nested attributes, dictionary keys, and sequence indexing.
+
+        For instance, the path "foo.bar[2].baz" would resolve to `root.foo.bar[2].baz`. This
+        allows accessing attributes in a nested structure, such as a dictionary or a list.
+
+        Args:
+            root: The main object from which to resolve the attribute.
+            path: Dotted path string to the attribute variable. For e.g., "foo.bar[2].baz".
+
+        Returns:
+            A tuple of two functions (getter, setter), where:
+            the getter retrieves the current value of the attribute, and
+            the setter writes a new value back to the attribute.
+        """
+        import re
+
+        # Turn "a.b[2].c" into ["a", ("b", 2), "c"] and store in parts
+        path_parts: list[str | tuple[str, int]] = []
+        for part in path.split("."):
+            m = re.compile(r"^(\w+)\[(\d+)\]$").match(part)
+            if m:
+                path_parts.append((m.group(1), int(m.group(2))))
+            else:
+                path_parts.append(part)
+
+        # Traverse the parts to find the container
+        container = root
+        for container_path in path_parts[:-1]:
+            if isinstance(container_path, tuple):
+                # we are accessing a list element
+                name, idx = container_path
+                # find underlying attribute
+                if isinstance(container_path, dict):
+                    seq = container[name]  # type: ignore[assignment]
+                else:
+                    seq = getattr(container, name)
+                # save the container for the next iteration
+                container = seq[idx]
+            else:
+                # we are accessing a dictionary key or an attribute
+                if isinstance(container, dict):
+                    container = container[container_path]
+                else:
+                    container = getattr(container, container_path)
+
+        # save the container and the last part of the path
+        self._container = container
+        self._last_path = path_parts[
+            -1
+        ]  # for "a.b[2].c", this is "c", while for "a.b[2]" it is 2
+
+        # build the getter and setter
+        if isinstance(self._container, tuple):
+            get_value = lambda: self._container[self._last_path]  # noqa: E731
+
+            def set_value(val):
+                tuple_list = list(self._container)
+                tuple_list[self._last_path] = val
+                self._container = tuple(tuple_list)
+
+        elif isinstance(self._container, (list, dict)):
+            get_value = lambda: self._container[self._last_path]  # noqa: E731
+
+            def set_value(val):
+                self._container[self._last_path] = val
+
+        elif isinstance(self._container, object):
+            get_value = lambda: getattr(self._container, self._last_path)  # noqa: E731
+            set_value = lambda val: setattr(self._container, self._last_path, val)  # noqa: E731
+        else:
+            raise TypeError(
+                f"Unable to build accessors for address '{path}'. Unknown type found for access variable:"
+                f" '{type(self._container)}'. Expected a list, dict, or object with attributes."
+            )
+
+        return get_value, set_value
 
 
 class modify_reward_weight(ManagerTermBase):
@@ -118,6 +267,20 @@ class modify_reward_weight(ManagerTermBase):
         return self._term_cfg.weight
 
 
+class modify_term_cfg(modify_env_param):
+    def __init__(self, cfg, env):
+        # initialize the parent
+        super().__init__(cfg, env)
+        # overwrite the simplified address with the full manager path
+        self._address = self._address.replace("s.", "_manager.cfg.", 1)
+
+
+def override_command_range(env, env_ids, old_value, value, num_steps):
+    if env.common_step_counter / env.num_envs > num_steps:
+        return value
+    return modify_term_cfg.NO_CHANGE
+
+
 @configclass
 class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
     def __post_init__(self):
@@ -141,7 +304,21 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.torque_limits_2.weight = -100
         # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
+        #
+        self.curriculum.range_override = CurriculumTermCfg(
+            func=modify_term_cfg,
+            params={
+                "address": "commands.base_velocity.ranges.lin_vel_y",
+                "modify_fn": override_command_range,
+                "modify_params": {
+                    "value": (0.2, 1.0),
+                    "num_steps": 4,
+                },
+            },
+        )
 
+        num_steps = 15
+        warmup_period = 10
         # self.rewards.stand_still.weight = -5
         # self.rewards.feet_contact_without_cmd.weight = 0.1
         self.rewards.feet_air_time.weight = 100
@@ -150,74 +327,112 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "feet_on_step",
-                "weight": -60,
-                "num_steps": 10,
-                "warmup_period": 10,
+                "weight": -75,
                 "initial_weight": self.rewards.feet_on_step.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
             },
         )
 
-        # self.rewards.undesired_contacts_thigh.weight = -1
-        # self.rewards.undesired_contacts_calf.weight = -1
+        self.curriculum.joint_deviation_l1_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "joint_deviation_l1",
+                "weight": -20,
+                "initial_weight": self.rewards.joint_deviation_l1.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
+            },
+        )
+        self.curriculum.dof_acc_l2_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "dof_acc_l2",
+                "weight": -2.5e-7 * 100,
+                "initial_weight": self.rewards.dof_acc_l2.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
+            },
+        )
+        self.curriculum.action_rate_l2_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "action_rate_l2",
+                "weight": -0.01 * 100,
+                "initial_weight": self.rewards.action_rate_l2.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
+            },
+        )
 
         self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "dof_torques_l2",
                 "weight": -0.006 * 5,
-                "num_steps": 10,
-                "warmup_period": 10,
                 "initial_weight": self.rewards.dof_torques_l2.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
             },
         )
         self.curriculum.torque_limits_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "torque_limits",
-                "weight": -35 * 4,
-                "num_steps": 10,
-                "warmup_period": 10,
+                "weight": -35 * 5,
                 "initial_weight": self.rewards.torque_limits.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
             },
         )
         self.curriculum.torque_limits_2_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "torque_limits_2",
-                "weight": -100 * 4,
-                "num_steps": 10,
-                "warmup_period": 10,
+                "weight": -100 * 5,
                 "initial_weight": self.rewards.torque_limits_2.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
             },
         )
         self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "feet_stumble",
-                "weight": -20 * 4,
+                "weight": -20 * 5,
                 "initial_weight": self.rewards.feet_stumble.weight,
-                "num_steps": 10,
-                "warmup_period": 10,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
+            },
+        )
+        self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
+            func=modify_reward_weight,
+            params={
+                "term_name": "feet_slide",
+                "weight": -20 * 4,
+                "initial_weight": self.rewards.feet_slide.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
             },
         )
         self.curriculum.undesired_contacts_thigh_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "undesired_contacts_thigh",
-                "weight": -20 * 3,
-                "num_steps": 10,
-                "warmup_period": 10,
+                "weight": -20 * 4,
                 "initial_weight": self.rewards.undesired_contacts_thigh.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
             },
         )
         self.curriculum.undesired_contacts_calf_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "undesired_contacts_calf",
-                "weight": -20 * 3,
-                "num_steps": 10,
-                "warmup_period": 10,
+                "weight": -20 * 4,
                 "initial_weight": self.rewards.undesired_contacts_calf.weight,
+                "num_steps": num_steps,
+                "warmup_period": warmup_period,
             },
         )
         # self.curriculum.feet_on_step_schedule = CurriculumTermCfg(
@@ -232,11 +447,12 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # )
 
         self.events.push_robot.params["velocity_range"] = {
-            "x": (-1, 1),
-            "y": (-1, 1),
-            "roll": (-1, 1),
-            "pitch": (-1, 1),
-            "yaw": (-1, 1),
+            "x": (-0.8, 0.8),
+            "y": (-0.8, 0.8),
+            "z": (-0.01, 0.01),
+            "roll": (-0.1, 0.1),
+            "pitch": (-0.1, 0.1),
+            "yaw": (-0.1, 0.1),
         }
         # self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
         # self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
@@ -332,8 +548,8 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         self.events.push_robot.interval_range_s = (4.0, 6.0)
         # Random feet pushes
         self.events.push_feet.params["velocity_range"] = {
-            "x": (-0.01, 0.01),
-            "y": (-0.01, 0.01),
+            "x": (-0.02, 0.02),
+            "y": (-0.02, 0.02),
         }
         self.events.push_feet.interval_range_s = (1.0, 2.0)
 
