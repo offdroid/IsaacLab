@@ -305,19 +305,19 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # self.rewards.feet_stumble.weight = -5
         # self.rewards.feet_slide.weight = -5
         #
-        self.curriculum.range_override = CurriculumTermCfg(
-            func=modify_term_cfg,
-            params={
-                "address": "commands.base_velocity.ranges.lin_vel_y",
-                "modify_fn": override_command_range,
-                "modify_params": {
-                    "value": (0.2, 1.0),
-                    "num_steps": 4,
-                },
-            },
-        )
+        # self.curriculum.range_override = CurriculumTermCfg(
+        #     func=modify_term_cfg,
+        #     params={
+        #         "address": "commands.base_velocity.ranges.lin_vel_y",
+        #         "modify_fn": override_command_range,
+        #         "modify_params": {
+        #             "value": (0.2, 1.0),
+        #             "num_steps": 4,
+        #         },
+        #     },
+        # )
 
-        num_steps = 15
+        num_steps = 17
         warmup_period = 10
         # self.rewards.stand_still.weight = -5
         # self.rewards.feet_contact_without_cmd.weight = 0.1
@@ -340,7 +340,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "joint_deviation_l1",
                 "weight": -20,
                 "initial_weight": self.rewards.joint_deviation_l1.weight,
-                "num_steps": num_steps,
+                "num_steps": num_steps + warmup_period,
                 "warmup_period": warmup_period,
             },
         )
@@ -350,7 +350,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "dof_acc_l2",
                 "weight": -2.5e-7 * 100,
                 "initial_weight": self.rewards.dof_acc_l2.weight,
-                "num_steps": num_steps,
+                "num_steps": num_steps + warmup_period,
                 "warmup_period": warmup_period,
             },
         )
@@ -360,7 +360,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "term_name": "action_rate_l2",
                 "weight": -0.01 * 100,
                 "initial_weight": self.rewards.action_rate_l2.weight,
-                "num_steps": num_steps,
+                "num_steps": num_steps + warmup_period,
                 "warmup_period": warmup_period,
             },
         )
