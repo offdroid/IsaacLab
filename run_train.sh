@@ -10,8 +10,6 @@ if [ -z "$datetime" ]; then
 fi
 
 seeds=(1 2 3)
-seeds=(1 2)
-
 for seed in "${seeds[@]}"; do
-  ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-AMPShortStairs-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_ampDRv2_shortstairsvaried_footonstep-60scheduled" --logger wandb --log_project_name amp_dr --max_iterations 20000 --num_envs 4096
+  ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-AMPShortStairs-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_ampDRv3" --logger wandb --log_project_name amp_dr --max_iterations 17500 --num_envs 4096
 done
