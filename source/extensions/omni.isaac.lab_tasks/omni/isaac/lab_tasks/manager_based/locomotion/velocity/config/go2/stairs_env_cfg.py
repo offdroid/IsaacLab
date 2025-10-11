@@ -26,7 +26,6 @@ from . import parameters
 
 @configclass
 class UnitreeGo2StairsEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
-
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -56,7 +55,6 @@ class UnitreeGo2StairsEnvCfgSimpleReward_PLAY(UnitreeGo2StairsEnvCfgSimpleReward
 
 @configclass
 class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
-
     def __post_init__(self):
         # post init of parent
         super().__post_init__()
@@ -250,9 +248,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
-        self.amp_motion_folder = (
-            "datasets/fromVision_motions_DepthCam_stairsv3fast_feetZAmpl_minimal_stairs2_slow/*"
-        )
+        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_stairsv3fast_feetZAmpl_minimal_stairs2_slow/*"
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
     def update_motion_files(self):
@@ -286,7 +282,9 @@ class AMPUnitreeGo2StairsAlignmentEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         self.terrain_type = "stairs"
         parameters.set_terrain(self)
         parameters.set_curriculum(self, False)
-        self.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
+        self.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].step_height_range = (
             0.0,
             0.0,
         )
@@ -307,9 +305,7 @@ class AMPUnitreeGo2StairsAlignmentEnvCfg(AMPUnitreeGo2StairsEnvCfg):
 
         self.episode_length_s = 5.0
 
-        self.amp_motion_folder = (
-            "datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_minimal_feet_forward/*"
-        )
+        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_minimal_feet_forward/*"
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
 
@@ -326,22 +322,25 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
 
         # Random force pushes on body
         self.events.push_robot.params["velocity_range"] = {
-            "x": (-1, 1),
-            "y": (-1, 1),
-            "z": (-0.5, 0.5),
-            "roll": (-0.5, 0.5),
-            "pitch": (-0.5, 0.5),
+            "x": (-0.8, 0.8),
+            "y": (-0.8, 0.8),
+            "z": (-0.01, 0.01),
+            "roll": (-0.1, 0.1),
+            "pitch": (-0.1, 0.1),
             "yaw": (-0.1, 0.1),
         }
         self.events.push_robot.interval_range_s = (4.0, 6.0)
         # Random feet pushes
         self.events.push_feet.params["velocity_range"] = {
-            "x": (-0.2, 0.2),
-            "y": (-0.2, 0.2),
+            "x": (-0.01, 0.01),
+            "y": (-0.01, 0.01),
         }
-        self.events.push_feet.interval_range_s = (4.0, 6.0)
+        self.events.push_feet.interval_range_s = (1.0, 2.0)
 
-        self.curriculum.terrain_levels.params["custom_required_distance_for_move_up"] = 0.3 * 8 * 3 / 4
+        self.curriculum.terrain_levels.params[
+            "custom_required_distance_for_move_up"
+        ] = 0.3 * 8 * 3 / 4
+
 
 @configclass
 class AMPUnitreeGo2ShortStairsEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):
