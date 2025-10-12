@@ -317,7 +317,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         #     },
         # )
 
-        num_steps = 17
+        num_steps = 15
+        num_steps2 = 25
+        num_steps3 = 35
         warmup_period = 10
         # self.rewards.stand_still.weight = -5
         # self.rewards.feet_contact_without_cmd.weight = 0.1
@@ -327,7 +329,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "feet_on_step",
-                "weight": -75,
+                "weight": -70,
                 "initial_weight": self.rewards.feet_on_step.weight,
                 "num_steps": num_steps,
                 "warmup_period": warmup_period,
@@ -338,9 +340,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "joint_deviation_l1",
-                "weight": -20,
-                "initial_weight": self.rewards.joint_deviation_l1.weight,
-                "num_steps": num_steps + warmup_period,
+                "weight": -20 * 0.5,
+                "initial_weight": 0.0,
+                "num_steps": num_steps3,
                 "warmup_period": warmup_period,
             },
         )
@@ -348,9 +350,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "dof_acc_l2",
-                "weight": -2.5e-7 * 100,
-                "initial_weight": self.rewards.dof_acc_l2.weight,
-                "num_steps": num_steps + warmup_period,
+                "weight": -2.5e-7 * 100 * 0.5,
+                "initial_weight": 0.0,
+                "num_steps": num_steps3,
                 "warmup_period": warmup_period,
             },
         )
@@ -358,9 +360,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "action_rate_l2",
-                "weight": -0.01 * 100,
-                "initial_weight": self.rewards.action_rate_l2.weight,
-                "num_steps": num_steps + warmup_period,
+                "weight": -0.01 * 100 * 0.5,
+                "initial_weight": 0.0,
+                "num_steps": num_steps3,
                 "warmup_period": warmup_period,
             },
         )
@@ -369,9 +371,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "dof_torques_l2",
-                "weight": -0.006 * 5,
+                "weight": -0.006 * 3,
                 "initial_weight": self.rewards.dof_torques_l2.weight,
-                "num_steps": num_steps,
+                "num_steps": num_steps2,
                 "warmup_period": warmup_period,
             },
         )
@@ -379,9 +381,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "torque_limits",
-                "weight": -35 * 5,
+                "weight": -35 * 3,
                 "initial_weight": self.rewards.torque_limits.weight,
-                "num_steps": num_steps,
+                "num_steps": num_steps2,
                 "warmup_period": warmup_period,
             },
         )
@@ -389,9 +391,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             func=modify_reward_weight,
             params={
                 "term_name": "torque_limits_2",
-                "weight": -100 * 5,
+                "weight": -100 * 3,
                 "initial_weight": self.rewards.torque_limits_2.weight,
-                "num_steps": num_steps,
+                "num_steps": num_steps2,
                 "warmup_period": warmup_period,
             },
         )
@@ -405,11 +407,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "warmup_period": warmup_period,
             },
         )
-        self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
+        self.curriculum.feet_slide_schedule = CurriculumTermCfg(
             func=modify_reward_weight,
             params={
                 "term_name": "feet_slide",
-                "weight": -20 * 4,
+                "weight": -10 * 0.25,
                 "initial_weight": self.rewards.feet_slide.weight,
                 "num_steps": num_steps,
                 "warmup_period": warmup_period,
