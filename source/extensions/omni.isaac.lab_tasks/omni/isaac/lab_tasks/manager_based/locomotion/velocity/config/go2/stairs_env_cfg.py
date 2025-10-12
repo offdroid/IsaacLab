@@ -553,11 +553,11 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
             "x": (-0.02, 0.02),
             "y": (-0.02, 0.02),
         }
-        self.events.push_feet.interval_range_s = (1.0, 2.0)
+        self.events.push_feet.interval_range_s = (1.0, 3.0)
 
         self.curriculum.terrain_levels.params[
             "custom_required_distance_for_move_up"
-        ] = 0.6 * 8 * 3 / 4
+        ] = ((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3
 
 
 @configclass

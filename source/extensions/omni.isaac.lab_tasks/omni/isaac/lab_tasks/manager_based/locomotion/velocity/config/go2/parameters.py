@@ -346,7 +346,7 @@ def set_stairs_env_cfg_cmds(cfg):
         debug_vis=cfg.commands.base_velocity.debug_vis,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-0.1, 0.1),
-            lin_vel_y=(0.2, 1.0),
+            lin_vel_y=(0.2, 0.7),
             ang_vel_z=(0, 0),
             heading=(
                 math.pi / 2 - math.radians(20),
