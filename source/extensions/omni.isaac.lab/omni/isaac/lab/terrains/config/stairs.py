@@ -15,7 +15,7 @@ STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
         30.5,
     ),  # make it long enough to make sure robot doesn't fall down at end of platform (1ms * 20s = 20m)
     border_width=0.2,
-    num_rows=11,
+    num_rows=13,
     num_cols=20,
     horizontal_scale=0.1,  # not relevant, I think
     vertical_scale=0.005,  # not relevant, I think
