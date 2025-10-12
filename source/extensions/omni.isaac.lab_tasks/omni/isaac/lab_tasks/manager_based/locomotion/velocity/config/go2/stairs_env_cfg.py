@@ -557,7 +557,7 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
 
         self.curriculum.terrain_levels.params[
             "custom_required_distance_for_move_up"
-        ] = 0.3 * 8 * 3 / 4
+        ] = 0.6 * 8 * 3 / 4
 
 
 @configclass
