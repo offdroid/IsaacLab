@@ -363,6 +363,26 @@ gym.register(
 )
 
 gym.register(
+    id="Isaac-Velocity-AMPShortStairs-Basic-Unitree-Go2-v0",
+    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.stairs_env_cfg:AMPUnitreeGo2ShortStairsBasicEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:UnitreeGo2AMPStairsPPORunnerCfg",
+    },
+)
+
+gym.register(
+    id="Isaac-Velocity-AMPShortStairs-Basic-Unitree-Go2-Play-v0",
+    entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.stairs_env_cfg:AMPUnitreeGo2ShortStairsBasicEnvCfg_PLAY",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:UnitreeGo2AMPStairsPPORunnerCfg",
+    },
+)
+
+gym.register(
     id="Isaac-Velocity-AMPStairs-Alignment-Unitree-Go2-v0",
     entry_point="omni.isaac.lab.envs:ManagerBasedRLEnv",
     disable_env_checker=True,

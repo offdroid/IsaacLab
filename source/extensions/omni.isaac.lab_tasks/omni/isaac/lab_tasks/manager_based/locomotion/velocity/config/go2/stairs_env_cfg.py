@@ -570,3 +570,49 @@ class AMPUnitreeGo2ShortStairsEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):
         parameters.set_play_settings_rough(self)
 
         self.amp_motion_folder = "datasets/dummy/*"  # required otherwise it wont start; it is recomended to use same motion files as used for training
+
+
+@configclass
+class AMPUnitreeGo2ShortStairsBasicEnvCfg(AMPUnitreeGo2StairsEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        self.terrain_type = "shortstairs"
+        parameters.set_terrain(self)
+        parameters.set_rewards_simple(self)
+
+        self.episode_length_s = 8.0
+
+        # Random force pushes on body
+        self.events.push_robot.params["velocity_range"] = {
+            "x": (-0.8, 0.8),
+            "y": (-0.8, 0.8),
+            "z": (-0.01, 0.01),
+            "roll": (-0.1, 0.1),
+            "pitch": (-0.1, 0.1),
+            "yaw": (-0.1, 0.1),
+        }
+        self.events.push_robot.interval_range_s = (4.0, 6.0)
+        # Random feet pushes
+        self.events.push_feet.params["velocity_range"] = {
+            "x": (-0.02, 0.02),
+            "y": (-0.02, 0.02),
+        }
+        self.events.push_feet.interval_range_s = (1.0, 3.0)
+
+        self.curriculum.terrain_levels.params[
+            "custom_required_distance_for_move_up"
+        ] = ((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3
+
+
+@configclass
+class AMPUnitreeGo2ShortStairsBasicEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
+
+        parameters.set_play_settings_flat(self)
+        parameters.set_play_settings_rough(self)
+
+        self.amp_motion_folder = "datasets/dummy/*"  # required otherwise it wont start; it is recomended to use same motion files as used for training
