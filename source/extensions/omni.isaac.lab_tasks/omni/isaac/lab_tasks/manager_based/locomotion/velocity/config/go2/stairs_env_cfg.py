@@ -588,6 +588,18 @@ class AMPUnitreeGo2ShortStairsBasicEnvCfg(AMPUnitreeGo2StairsEnvCfg):
                 continue
             setattr(self.curriculum, field.name, None)
 
+        self.curriculum.feet_on_step_schedule = None
+        self.curriculum.joint_deviation_l1_schedule  = None
+        self.curriculum.dof_acc_l2_schedule  = None
+        self.curriculum.action_rate_l2_schedule = None
+        self.curriculum.dof_torques_l2_schedule  = None
+        self.curriculum.torque_limits_schedule  = None
+        self.curriculum.torque_limits_2_schedule  = None
+        self.curriculum.feet_stumble_schedule  = None
+        self.curriculum.feet_slide_schedule  = None
+        self.curriculum.undesired_contacts_thigh_schedule  = None
+        self.curriculum.undesired_contacts_calf_schedule = None
+
         self.episode_length_s = 8.0
 
         # Random force pushes on body
