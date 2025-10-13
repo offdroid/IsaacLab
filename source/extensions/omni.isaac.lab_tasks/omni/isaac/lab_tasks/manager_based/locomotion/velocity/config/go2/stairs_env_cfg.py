@@ -582,6 +582,11 @@ class AMPUnitreeGo2ShortStairsBasicEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         parameters.set_terrain(self)
         parameters.set_rewards_simple(self)
 
+        for field in fields(cfg.curriculum):
+            if field.name == "terrain_levels":
+                continue
+            setattr(cfg.curriculum, field.name, None)
+
         self.episode_length_s = 8.0
 
         # Random force pushes on body
