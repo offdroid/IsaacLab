@@ -429,6 +429,7 @@ def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
         "x": (-0.5, 0.5),
         "y": (-0.9, 0.3),
+        "z": (-0.06, -0.06),
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
         "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
