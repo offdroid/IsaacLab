@@ -317,147 +317,68 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         #     },
         # )
 
-        num_steps = 15
-        num_steps2 = 25
-        num_steps3 = 35
+        num_steps = [15, 25, 40]
         warmup_period = 10
         # self.rewards.stand_still.weight = -5
-        # self.rewards.feet_contact_without_cmd.weight = 0.1
+        self.rewards.feet_contact_without_cmd.weight = 0.1
         self.rewards.feet_air_time.weight = 100
         self.rewards.feet_on_step.weight = 0
-        self.curriculum.feet_on_step_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "feet_on_step",
+
+        data = {
+            "feet_on_step": {
+                "order": 0,
                 "weight": -70,
-                "initial_weight": self.rewards.feet_on_step.weight,
-                "num_steps": num_steps,
-                "warmup_period": warmup_period,
             },
-        )
-
-        self.curriculum.joint_deviation_l1_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "joint_deviation_l1",
+            "undesired_contacts_thigh": {
+                "order": 0,
+                "weight": -20 * 2,
+            },
+            "undesired_contacts_calf": {
+                "order": 0,
+                "weight": -20 * 2,
+            },
+            "dof_torques_l2": {"order": 1, "weight": -0.006 * 3},
+            "torque_limits": {"order": 1, "weight": -35 * 3},
+            "torque_limits_2": {"order": 1, "weight": -100 * 3},
+            "feet_stumble": {"order": 1, "weight": -20 * 5},
+            "feet_slide": {"order": 1, "weight": -20 * 5},
+            "joint_deviation_l1_hip": {
+                "order": 2,
+                "weight": -2,
+            },
+            "joint_deviation_l1_calf_thigh": {
+                "order": 2,
                 "weight": -0.5,
-                "initial_weight": 0.0,
-                "num_steps": num_steps3,
-                "warmup_period": warmup_period,
             },
-        )
-        self.curriculum.dof_acc_l2_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "dof_acc_l2",
-                "weight": -2.5e-7 * 100 * 0.5,
-                "initial_weight": 0.0,
-                "num_steps": num_steps3,
-                "warmup_period": warmup_period,
-            },
-        )
-        self.curriculum.action_rate_l2_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "action_rate_l2",
-                "weight": -0.01 * 100 * 0.5,
-                "initial_weight": 0.0,
-                "num_steps": num_steps3,
-                "warmup_period": warmup_period,
-            },
-        )
-
-        self.curriculum.dof_torques_l2_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "dof_torques_l2",
-                "weight": -0.006 * 3,
-                "initial_weight": self.rewards.dof_torques_l2.weight,
-                "num_steps": num_steps2,
-                "warmup_period": warmup_period,
-            },
-        )
-        self.curriculum.torque_limits_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "torque_limits",
-                "weight": -35 * 3,
-                "initial_weight": self.rewards.torque_limits.weight,
-                "num_steps": num_steps2,
-                "warmup_period": warmup_period,
-            },
-        )
-        self.curriculum.torque_limits_2_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "torque_limits_2",
-                "weight": -100 * 3,
-                "initial_weight": self.rewards.torque_limits_2.weight,
-                "num_steps": num_steps2,
-                "warmup_period": warmup_period,
-            },
-        )
-        self.curriculum.feet_stumble_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "feet_stumble",
-                "weight": -20 * 5,
-                "initial_weight": self.rewards.feet_stumble.weight,
-                "num_steps": num_steps,
-                "warmup_period": warmup_period,
-            },
-        )
-        self.curriculum.feet_slide_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "feet_slide",
-                "weight": -10 * 0.25,
-                "initial_weight": self.rewards.feet_slide.weight,
-                "num_steps": num_steps,
-                "warmup_period": warmup_period,
-            },
-        )
-        self.curriculum.undesired_contacts_thigh_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "undesired_contacts_thigh",
-                "weight": -20 * 4,
-                "initial_weight": self.rewards.undesired_contacts_thigh.weight,
-                "num_steps": num_steps,
-                "warmup_period": warmup_period,
-            },
-        )
-        self.curriculum.undesired_contacts_calf_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "undesired_contacts_calf",
-                "weight": -20 * 4,
-                "initial_weight": self.rewards.undesired_contacts_calf.weight,
-                "num_steps": num_steps,
-                "warmup_period": warmup_period,
-            },
-        )
-        # self.curriculum.feet_on_step_schedule = CurriculumTermCfg(
-        #     func=modify_reward_weight,
-        #     params={
-        #         "term_name": "feet_on_step",
-        #         "weight": 0.1,
-        #         "num_steps": 0,
-        #         "warmup_period": 15,
-        #         "initial_weight": self.rewards.feet_on_step.weight,
-        #     },
-        # )
+            "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 40},
+            "action_rate_l2": {"order": 2, "weight": -0.01 * 40},
+        }
+        for key, value in data.items():
+            setattr(
+                self.curriculum,
+                f"{key}_schedule",
+                CurriculumTermCfg(
+                    func=modify_reward_weight,
+                    params={
+                        "term_name": key,
+                        "weight": value["weight"],
+                        "initial_weight": getattr(self.rewards, key).weight,
+                        "num_steps": num_steps[value["order"]],
+                        "warmup_period": warmup_period,
+                    },
+                ),
+            )
 
         self.events.push_robot.params["velocity_range"] = {
-            "x": (-0.8, 0.8),
-            "y": (-0.8, 0.8),
+            "x": (-1.0, 1.0),
+            "y": (-1.0, 1.0),
             "z": (-0.01, 0.01),
             "roll": (-0.1, 0.1),
             "pitch": (-0.1, 0.1),
             "yaw": (-0.1, 0.1),
         }
-        # self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
-        # self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
+        self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
+        self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
 
         self.scene.num_envs = 2 * 4096  # 5480
 
@@ -540,14 +461,14 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
 
         # Random force pushes on body
         self.events.push_robot.params["velocity_range"] = {
-            "x": (-0.8, 0.8),
-            "y": (-0.8, 0.8),
+            "x": (-1.0, 1.0),
+            "y": (-1.0, 1.0),
             "z": (-0.01, 0.01),
             "roll": (-0.1, 0.1),
             "pitch": (-0.1, 0.1),
             "yaw": (-0.1, 0.1),
         }
-        self.events.push_robot.interval_range_s = (4.0, 6.0)
+        self.events.push_robot.interval_range_s = (2.0, 6.0)
         # Random feet pushes
         self.events.push_feet.params["velocity_range"] = {
             "x": (-0.02, 0.02),
@@ -583,35 +504,36 @@ class AMPUnitreeGo2ShortStairsBasicEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         parameters.set_rewards_simple(self)
 
         from dataclasses import fields
+
         for field in fields(self.curriculum):
             if field.name == "terrain_levels":
                 continue
             setattr(self.curriculum, field.name, None)
 
         self.curriculum.feet_on_step_schedule = None
-        self.curriculum.joint_deviation_l1_schedule  = None
-        self.curriculum.dof_acc_l2_schedule  = None
+        self.curriculum.joint_deviation_l1_schedule = None
+        self.curriculum.dof_acc_l2_schedule = None
         self.curriculum.action_rate_l2_schedule = None
-        self.curriculum.dof_torques_l2_schedule  = None
-        self.curriculum.torque_limits_schedule  = None
-        self.curriculum.torque_limits_2_schedule  = None
-        self.curriculum.feet_stumble_schedule  = None
-        self.curriculum.feet_slide_schedule  = None
-        self.curriculum.undesired_contacts_thigh_schedule  = None
+        self.curriculum.dof_torques_l2_schedule = None
+        self.curriculum.torque_limits_schedule = None
+        self.curriculum.torque_limits_2_schedule = None
+        self.curriculum.feet_stumble_schedule = None
+        self.curriculum.feet_slide_schedule = None
+        self.curriculum.undesired_contacts_thigh_schedule = None
         self.curriculum.undesired_contacts_calf_schedule = None
 
         self.episode_length_s = 8.0
 
         # Random force pushes on body
         self.events.push_robot.params["velocity_range"] = {
-            "x": (-0.8, 0.8),
-            "y": (-0.8, 0.8),
+            "x": (-1.0, 1.0),
+            "y": (-1.0, 1.0),
             "z": (-0.01, 0.01),
             "roll": (-0.1, 0.1),
             "pitch": (-0.1, 0.1),
             "yaw": (-0.1, 0.1),
         }
-        self.events.push_robot.interval_range_s = (4.0, 6.0)
+        self.events.push_robot.interval_range_s = (2.0, 6.0)
         # Random feet pushes
         self.events.push_feet.params["velocity_range"] = {
             "x": (-0.02, 0.02),
