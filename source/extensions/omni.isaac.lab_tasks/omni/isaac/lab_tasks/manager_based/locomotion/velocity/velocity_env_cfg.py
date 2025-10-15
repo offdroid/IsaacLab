@@ -458,7 +458,7 @@ class RewardsCfg:
     torque_limits_2 = RewTerm(
         func=applied_torque_limits,
         weight=-0.0,
-        params={"limit": 2 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort},
+        params={"limit": 1.5 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort},
     )
     feet_slide = RewTerm(
         func=mdp.feet_slide,

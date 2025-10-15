@@ -323,6 +323,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.feet_contact_without_cmd.weight = 0.1
         self.rewards.feet_air_time.weight = 100
         self.rewards.feet_on_step.weight = 0
+        self.rewards.ang_vel_xy_l2.weight = 0
+        self.rewards.ang_vel_x_l2.weight = 0
 
         data = {
             "feet_on_step": {
@@ -337,21 +339,25 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "order": 0,
                 "weight": -20 * 2,
             },
-            "dof_torques_l2": {"order": 1, "weight": -0.006 * 3},
-            "torque_limits": {"order": 1, "weight": -35 * 3},
-            "torque_limits_2": {"order": 1, "weight": -100 * 3},
-            "feet_stumble": {"order": 1, "weight": -20 * 5},
-            "feet_slide": {"order": 1, "weight": -20 * 5},
+            "dof_torques_l2": {"order": 1, "weight": -0.006 * 5},
+            "torque_limits": {"order": 1, "weight": -35 * 5},
+            "torque_limits_2": {"order": 1, "weight": -100 * 5},
+            "feet_stumble": {"order": 1, "weight": -200},
+            "feet_slide": {"order": 1, "weight": -2.5},
             "joint_deviation_l1_hip": {
-                "order": 2,
-                "weight": -2,
+                "order": 1,
+                "weight": -15,
             },
             "joint_deviation_l1_calf_thigh": {
-                "order": 2,
+                "order": 1,
                 "weight": -0.5,
             },
-            "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 40},
-            "action_rate_l2": {"order": 2, "weight": -0.01 * 40},
+            "ang_vel_xy_l2": {
+                "order": 1,
+                "weight": -10.0,
+            },
+            "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 20},
+            "action_rate_l2": {"order": 2, "weight": -0.01 * 80},
         }
         for key, value in data.items():
             setattr(
