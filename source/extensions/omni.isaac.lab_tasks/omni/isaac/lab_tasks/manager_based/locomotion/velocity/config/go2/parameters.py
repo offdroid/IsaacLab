@@ -145,7 +145,10 @@ def set_terrain(cfg):
         cfg.scene.terrain.terrain_generator.sub_terrains[
             "stairs"
         ].y_coordinate_origin_relative_to_first_stair_step = -0.7
-        cfg.scene.terrain.terrain_generator.sub_terrains["num_steps_range"] = (1, 6)
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].num_steps_range = (
+            1,
+            6,
+        )
         cfg.commands.base_velocity.resample_epsiode_length = (4, 4)
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
