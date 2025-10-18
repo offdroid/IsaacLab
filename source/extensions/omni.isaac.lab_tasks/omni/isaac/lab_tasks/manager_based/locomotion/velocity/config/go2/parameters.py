@@ -94,7 +94,7 @@ def set_curriculum(cfg, enable: bool):
             params={"custom_required_distance_for_move_up": 3},
         )
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
-        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.15)
+        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.3)
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
             0.14,
             0.20,
@@ -135,7 +135,7 @@ def set_terrain(cfg):
         cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "shortstairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
-        cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 1.5)
+        cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 5)
         cfg.scene.terrain.terrain_generator.sub_terrains[
             "stairs"
         ].platform_width_top = 5
@@ -145,6 +145,7 @@ def set_terrain(cfg):
         cfg.scene.terrain.terrain_generator.sub_terrains[
             "stairs"
         ].y_coordinate_origin_relative_to_first_stair_step = -0.7
+        cfg.scene.terrain.terrain_generator.sub_terrains["num_steps_range"] = (1, 6)
         cfg.commands.base_velocity.resample_epsiode_length = (4, 4)
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
@@ -461,7 +462,10 @@ def add_relative_position_on_stairs_observation(cfg):
     )
     cfg.observations.policy.distance_to_stairs = ObsTerm(
         func=mdp.distance_to_stairs,
-        noise=Unoise(n_min=-0.05, n_max=0.05),
+        # INFO: Wouldn't noising the whole observation history be better?
+        # With the current implemenetation the observation is noisy independant of the timestep,
+        # which does not help with imperfect offsets since it is not a systemic error.
+        noise=Unoise(n_min=-0.03, n_max=0.03),
     )
 
 

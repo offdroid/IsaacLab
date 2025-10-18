@@ -190,11 +190,16 @@ def _compute_stairs_parameters(
     )
 
     num_steps = int(available_y_for_stairs // step_width)
+    if cfg.num_steps_range is not None:
+        assert 1 <= cfg.num_steps_range[0] <= cfg.num_steps_range[1]
+        upper_limit = min(num_steps, cfg.num_steps_range[1])
+        lower_limit = cfg.num_steps_range[0]
+        num_steps = int(torch.rand([]) * (upper_limit - lower_limit) + lower_limit)
     if verbose:
         print(
             f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
         )
-    assert num_steps >= 2, (
+    assert num_steps >= 1, (
         f"Generated low amount of stairs: {num_steps}. Are you sure your terrain parameters are suitable?"
     )
     return {
