@@ -446,3 +446,53 @@ def foot_clearance_reward(
     clearance_reward = height_error * foot_leteral_vel
 
     return torch.sum(clearance_reward, dim=1)
+
+
+def sparse_end_of_stairs_reward(
+    env: ManagerBasedRLEnv,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
+):
+    asset: RigidObject = env.scene[asset_cfg.name]
+
+    rows = env.scene.terrain.terrain_levels
+    cols = env.scene.terrain.terrain_types
+
+    # step width for each robot's terrain
+    step_width = env.scene.terrain.terrain_params["step_width"][rows, cols]
+    num_steps = env.scene.terrain.terrain_params["num_steps"][rows, cols]
+
+    root_pos_y_absolute = asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
+    y_position_relative = (
+        root_pos_y_absolute
+        + env.cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].y_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
+    )
+
+    on_stairs = torch.logical_and(y_position_relative >= 0.0, y_position_relative - (num_steps + 0.5) * step_width <= 0)
+    over_stairs = y_position_relative - num_steps * step_width >= 0.0
+
+    # has_passed = over_stairs
+    # is_first_pass = torch.logical_and(
+    #     has_passed, torch.logical_not(env.has_passed_target) >= 1
+    # )
+    # if is_first_pass.any():
+    #     print(is_first_pass)
+    #
+    # reward = torch.where(
+    #     is_first_pass,
+    #     torch.tensor(1.0, device=env.device),
+    #     torch.tensor(0.0, device=env.device),
+    # )
+    # env.has_passed_target[is_first_pass] = 1
+
+    passed_step = (y_position_relative // step_width) * on_stairs
+    higher_target_reached = torch.logical_and(passed_step > env.has_passed_target, on_stairs)
+    env.has_passed_target[higher_target_reached] += 1
+    reward = torch.where(
+        higher_target_reached,
+        torch.tensor(1.0, device=env.device),
+        torch.tensor(0.0, device=env.device),
+    )
+
+    return reward

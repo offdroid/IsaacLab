@@ -442,7 +442,11 @@ class RewardsCfg:
     joint_deviation_l1_calf_thigh = RewTerm(
         func=joint_deviation_l1,
         weight=-0.0,
-        params={"asset_cfg": SceneEntityCfg("robot", joint_names=[".*_calf_joint", ".*_thigh_joint"])},
+        params={
+            "asset_cfg": SceneEntityCfg(
+                "robot", joint_names=[".*_calf_joint", ".*_thigh_joint"]
+            )
+        },
     )
 
     joint_pos_limits = RewTerm(
@@ -458,7 +462,9 @@ class RewardsCfg:
     torque_limits_2 = RewTerm(
         func=applied_torque_limits,
         weight=-0.0,
-        params={"limit": 1.5 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort},
+        params={
+            "limit": 1.5 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort
+        },
     )
     feet_slide = RewTerm(
         func=mdp.feet_slide,
@@ -497,6 +503,12 @@ class RewardsCfg:
             "distance_b": 0.05,
         },
     )
+
+    sparse_end_of_stairs = RewTerm(
+        func=mdp.sparse_end_of_stairs_reward,
+        weight=0.0,
+    )
+
     # freq_rate_l2 = RewTerm(
     #     func=mdp.freq_rate_l2,
     #     weight=-0.1,

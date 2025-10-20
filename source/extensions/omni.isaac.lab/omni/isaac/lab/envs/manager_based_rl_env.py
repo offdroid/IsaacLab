@@ -415,3 +415,5 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
 
         # reset the episode length buffer
         self.episode_length_buf[env_ids] = 0
+
+        self.has_passed_target[env_ids] = 0

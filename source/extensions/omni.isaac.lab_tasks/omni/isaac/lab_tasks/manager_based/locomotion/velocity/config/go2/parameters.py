@@ -89,9 +89,12 @@ def set_curriculum(cfg, enable: bool):
         cfg.scene.terrain.terrain_generator.curriculum = True
         cfg.scene.terrain.max_init_terrain_level = 0
         assert cfg.terrain_type == "stairs"
+        # cfg.curriculum.terrain_levels = CurrTerm(
+        #     func=mdp.terrain_levels_vel,
+        #     params={"custom_required_distance_for_move_up": 3},
+        # )
         cfg.curriculum.terrain_levels = CurrTerm(
-            func=mdp.terrain_levels_vel,
-            params={"custom_required_distance_for_move_up": 3},
+            func=mdp.terrain_levels_stairs,
         )
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
         cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.3)
@@ -350,7 +353,7 @@ def set_stairs_env_cfg_cmds(cfg):
         debug_vis=cfg.commands.base_velocity.debug_vis,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
             lin_vel_x=(-0.1, 0.1),
-            lin_vel_y=(0.2, 0.7),
+            lin_vel_y=(0.3, 0.7),
             ang_vel_z=(0, 0),
             heading=(
                 math.pi / 2 - math.radians(20),

@@ -121,6 +121,10 @@ class ManagerBasedEnv:
             self.scene = InteractiveScene(self.cfg.scene)
         print("[INFO]: Scene manager: ", self.scene)
 
+        self.has_passed_target = torch.tensor(
+            [self.num_envs], dtype=torch.int32, device=self.device
+        )
+
         # set up camera viewport controller
         # viewport is not available in other rendering modes so the function will throw a warning
         # FIXME: This needs to be fixed in the future when we unify the UI functionalities even for
@@ -259,6 +263,8 @@ class ManagerBasedEnv:
         # if sensors are added to the scene, make sure we render to reflect changes in reset
         if self.sim.has_rtx_sensors() and self.cfg.rerender_on_reset:
             self.sim.render()
+
+        self.has_passed_target = torch.zeros_like(self.has_passed_target)
 
         # return observations
         return self.observation_manager.compute(), self.extras
