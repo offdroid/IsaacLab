@@ -104,6 +104,8 @@ def terrain_levels_stairs(
 
     move_up = y_position_relative - num_steps * step_width >= 0.0
     move_down = y_position_relative - num_steps * (1 / 3) * step_width < 0.0
+    move_up = move_up[env_ids]
+    move_down = move_down[env_ids]
 
     terrain: TerrainImporter = env.scene.terrain
     move_down *= ~move_up
