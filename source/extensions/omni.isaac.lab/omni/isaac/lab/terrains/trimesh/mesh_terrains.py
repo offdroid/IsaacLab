@@ -166,15 +166,25 @@ def _compute_stairs_parameters(
             step_height * cfg.width_to_height_ratio
         )  # demo was collected for a stair of step height 14cm and step width 34 cm. We want to keep that ratio for all generated stairs.
         step_width = max(0.2, step_width)
-    elif cfg.mode in ["norm", "scaled_norm"]:
-        # Pick a random unscaled step height, at first ignoring the curriculum
-        step_height = cfg.step_height_range[0] + torch.rand([]) * (
-            cfg.step_height_range[1] - cfg.step_height_range[0]
-        )
-        # Sample a random constraint from 60cm to 66cm: 2 * height + width = constraint
-        constraint = 0.6 + torch.rand([]) * 0.06
-        step_width = constraint - 2 * step_height
-        if cfg.mode == "scaled_norm":
+    elif cfg.mode in ["norm", "norm_widthprio", "scaled_norm", "scaled_norm_widthprio"]:
+        if cfg.mode.endswith("widthprio"):
+            assert isinstance(cfg.step_width, tuple)
+            # Pick a random unscaled step height, at first ignoring the curriculum
+            step_width = cfg.step_width[0] + torch.rand([]) * (
+                cfg.step_width[1] - cfg.step_width[0]
+            )
+            # Sample a random constraint from 60cm to 66cm: 2 * height + width = constraint
+            constraint = 0.6 + torch.rand([]) * 0.06
+            step_height = (constraint - step_width) / 2
+        else:
+            # Pick a random unscaled step height, at first ignoring the curriculum
+            step_height = cfg.step_height_range[0] + torch.rand([]) * (
+                cfg.step_height_range[1] - cfg.step_height_range[0]
+            )
+            # Sample a random constraint from 60cm to 66cm: 2 * height + width = constraint
+            constraint = 0.6 + torch.rand([]) * 0.06
+            step_width = constraint - 2 * step_height
+        if cfg.mode.startswith("scaled_norm"):
             # Finally scale for with difficulty coefficient
             step_height *= difficulty
     else:
@@ -259,7 +269,7 @@ def stairs_terrain(
 
     # Create steps
     for step in range(num_steps):
-        height_noise = torch.randn([]) * 0.05 * step_height
+        height_noise = torch.randn([]) * 0.02 * step_height
         width_noise = torch.randn([]) * 0.01 * step_width * 0
         _step_height = step_height + height_noise
         _step_width = step_width + width_noise
