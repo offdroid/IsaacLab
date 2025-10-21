@@ -106,8 +106,8 @@ def set_curriculum(cfg, enable: bool):
             "stairs"
         ].mode = "scaled_norm_widthprio"
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
-            0.27,
-            0.35,
+            0.28,
+            0.33,
         )
         # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 

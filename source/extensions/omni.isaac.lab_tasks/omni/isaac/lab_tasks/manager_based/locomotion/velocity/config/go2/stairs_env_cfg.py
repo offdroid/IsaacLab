@@ -325,7 +325,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.feet_on_step.weight = 0
         self.rewards.ang_vel_xy_l2.weight = 0
         self.rewards.ang_vel_x_l2.weight = 0
-        self.rewards.sparse_end_of_stairs.weight = 10
+        self.rewards.sparse_end_of_stairs.weight = 0
 
         data = {
             "feet_on_step": {
@@ -340,6 +340,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "order": 0,
                 "weight": -20 * 1,
             },
+            "sparse_end_of_stairs": {
+                "order": 0,
+                "weight": 1000,
+                "warmup_period": 30,
+            },
             "dof_torques_l2": {"order": 1, "weight": -0.006 * 3},
             "torque_limits": {"order": 1, "weight": -35 * 3},
             "torque_limits_2": {"order": 1, "weight": -100 * 3},
@@ -347,7 +352,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             "feet_slide": {"order": 1, "weight": -2.5},
             "joint_deviation_l1_hip": {
                 "order": 1,
-                "weight": -5,
+                "weight": -1,
             },
             "joint_deviation_l1_calf_thigh": {
                 "order": 1,
@@ -371,7 +376,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                         "weight": value["weight"],
                         "initial_weight": getattr(self.rewards, key).weight,
                         "num_steps": num_steps[value["order"]],
-                        "warmup_period": warmup_period,
+                        "warmup_period": getattr(value, "warmup_period", warmup_period),
                     },
                 ),
             )
