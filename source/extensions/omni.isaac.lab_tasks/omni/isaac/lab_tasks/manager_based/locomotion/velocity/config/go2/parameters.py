@@ -97,7 +97,7 @@ def set_curriculum(cfg, enable: bool):
             func=mdp.terrain_levels_stairs,
         )
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
-        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.3)
+        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.5)
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
             0.14,
             0.20,
@@ -106,8 +106,8 @@ def set_curriculum(cfg, enable: bool):
             "stairs"
         ].mode = "scaled_norm_widthprio"
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
-            0.28,
-            0.33,
+            0.27,
+            0.35,
         )
         # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
@@ -476,7 +476,7 @@ def add_relative_position_on_stairs_observation(cfg):
         # INFO: Wouldn't noising the whole observation history be better?
         # With the current implemenetation the observation is noisy independant of the timestep,
         # which does not help with imperfect offsets since it is not a systemic error.
-        noise=Unoise(n_min=-0.03, n_max=0.03),
+        noise=Unoise(n_min=-0.05, n_max=0.05),
     )
 
 
