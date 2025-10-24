@@ -327,6 +327,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.ang_vel_x_l2.weight = 0
         self.rewards.sparse_end_of_stairs.weight = 0
 
+        self.rewards.feet_on_step.params["distance_a"] = 0.025
+        self.rewards.feet_on_step.params["distance_b"] = 0.025
+
         data = {
             "feet_on_step": {
                 "order": 0,
