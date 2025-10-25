@@ -463,7 +463,7 @@ class RewardsCfg:
         func=applied_torque_limits,
         weight=-0.0,
         params={
-            "limit": 1.5 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort
+            "limit": 2 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort
         },
     )
     feet_slide = RewTerm(

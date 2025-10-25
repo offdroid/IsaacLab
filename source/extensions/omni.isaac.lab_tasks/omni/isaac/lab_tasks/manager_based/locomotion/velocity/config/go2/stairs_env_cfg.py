@@ -318,7 +318,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         # )
 
         num_steps = [15, 25, 40]
-        warmup_period = 10
+        warmup_period = 20
         # self.rewards.stand_still.weight = -5
         self.rewards.feet_contact_without_cmd.weight = 0.1
         self.rewards.feet_air_time.weight = 100
@@ -349,8 +349,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "warmup_period": 30,
             },
             "dof_torques_l2": {"order": 1, "weight": -0.006 * 3},
-            "torque_limits": {"order": 1, "weight": -35 * 3},
-            "torque_limits_2": {"order": 1, "weight": -100 * 3},
+            "torque_limits": {"order": 1, "weight": -35 * 1},
+            "torque_limits_2": {"order": 1, "weight": -100 * 1},
             "feet_stumble": {"order": 1, "weight": -200 / 2},
             "feet_slide": {"order": 1, "weight": -2.5},
             "joint_deviation_l1_hip": {
@@ -402,7 +402,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
-        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_stairsv3+v5fast_feetZAmpl_minimal_stairs_walk/*"
+        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_stairsv5fast_feetZAmpl_minimal_stairs_walk/*"
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
     def update_motion_files(self):
