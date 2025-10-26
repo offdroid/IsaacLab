@@ -327,8 +327,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         self.rewards.ang_vel_x_l2.weight = 0
         self.rewards.sparse_end_of_stairs.weight = 0
 
-        self.rewards.feet_on_step.params["distance_a"] = 0.025
-        self.rewards.feet_on_step.params["distance_b"] = 0.025
+        self.rewards.feet_on_step.params["distance_a"] = 0.02
+        self.rewards.feet_on_step.params["distance_b"] = 0.02
 
         data = {
             "feet_on_step": {
@@ -345,7 +345,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             },
             "sparse_end_of_stairs": {
                 "order": 0,
-                "weight": 1000,
+                "weight": 1500,
                 "warmup_period": 30,
             },
             "dof_torques_l2": {"order": 1, "weight": -0.006 * 3},
@@ -355,18 +355,18 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             "feet_slide": {"order": 1, "weight": -2.5},
             "joint_deviation_l1_hip": {
                 "order": 1,
-                "weight": -1,
+                "weight": -0.5,
             },
             "joint_deviation_l1_calf_thigh": {
                 "order": 1,
-                "weight": -0.5,
+                "weight": -0.1,
             },
             "ang_vel_xy_l2": {
                 "order": 1,
                 "weight": -10.0,
             },
-            "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 20},
-            "action_rate_l2": {"order": 2, "weight": -0.01 * 60},
+            "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 10},
+            "action_rate_l2": {"order": 2, "weight": -0.01 * 30},
         }
         for key, value in data.items():
             setattr(

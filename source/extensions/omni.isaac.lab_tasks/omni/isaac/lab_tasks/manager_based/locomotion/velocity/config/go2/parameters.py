@@ -463,7 +463,7 @@ def set_box_env_cfg_reset_base(cfg):
 def add_relative_position_on_stairs_observation(cfg):
     cfg.observations.policy.relative_position = ObsTerm(
         func=mdp.relative_position_on_stairs,
-        noise=Unoise(n_min=-0.2, n_max=0.2),
+        noise=Unoise(n_min=-0.1, n_max=0.1),
         clip=(-1, 1),
     )
     cfg.observations.policy.yaw = ObsTerm(
