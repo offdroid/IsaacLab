@@ -337,11 +337,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             },
             "undesired_contacts_thigh": {
                 "order": 0,
-                "weight": -20 * 1,
+                "weight": -20 * 0.5,
             },
             "undesired_contacts_calf": {
                 "order": 0,
-                "weight": -20 * 1,
+                "weight": -20 * 0.5,
             },
             "sparse_end_of_stairs": {
                 "order": 0,
@@ -351,22 +351,22 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             "dof_torques_l2": {"order": 1, "weight": -0.006 * 3},
             "torque_limits": {"order": 1, "weight": -35 * 1},
             "torque_limits_2": {"order": 1, "weight": -100 * 1},
-            "feet_stumble": {"order": 1, "weight": -200 / 2},
+            "feet_stumble": {"order": 1, "weight": -50},
             "feet_slide": {"order": 1, "weight": -2.5},
-            "joint_deviation_l1_hip": {
-                "order": 1,
-                "weight": -0.5,
-            },
-            "joint_deviation_l1_calf_thigh": {
-                "order": 1,
-                "weight": -0.1,
-            },
+            # "joint_deviation_l1_hip": {
+            #     "order": 1,
+            #     "weight": -0.5,
+            # },
+            # "joint_deviation_l1_calf_thigh": {
+            #     "order": 1,
+            #     "weight": -0.1,
+            # },
             "ang_vel_xy_l2": {
                 "order": 1,
                 "weight": -10.0,
             },
-            "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 10},
-            "action_rate_l2": {"order": 2, "weight": -0.01 * 30},
+            # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 0.01},
+            # "action_rate_l2": {"order": 2, "weight": -0.01 * 0.05},
         }
         for key, value in data.items():
             setattr(
@@ -392,8 +392,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             "pitch": (-0.1, 0.1),
             "yaw": (-0.1, 0.1),
         }
-        self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
-        self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
+        # self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
+        # self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
 
         self.scene.num_envs = 2 * 4096  # 5480
 
@@ -402,7 +402,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
-        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_stairsv3+v5fast_feetZAmpl_minimal_stairs_walk /*"
+        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_stairsv3+v5fast_feetZAmpl_minimal_stairs_walk/*"
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
     def update_motion_files(self):

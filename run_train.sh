@@ -9,7 +9,7 @@ if [ -z "$datetime" ]; then
   datetime=$(date +"%Y-%m-%d_%H-%M-%S")
 fi
 
-seeds=(3)
+seeds=(10 11)
 for seed in "${seeds[@]}"; do
-  ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-AMPShortStairs-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_amp_DRv6_DSv3_DSv5_wildcard4_lessdiversestairs_lesstorquepen" --logger wandb --log_project_name amp_6dr --max_iterations 20000 --num_envs 4096
+  ./isaaclab.sh -p source/standalone/workflows/rsl_rl/train.py --task Isaac-Velocity-AMPShortStairs-Unitree-Go2-v0 --headless --seed $seed --log_dir "${datetime}_amp_v7_DSv3_DSv5_wildcard5_lessnoise_lessimitation_envlessirrelpen" --logger wandb --log_project_name amp_6dr --max_iterations 40000 --num_envs 4096
 done
