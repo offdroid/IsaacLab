@@ -88,7 +88,7 @@ def set_curriculum(cfg, enable: bool):
     else:
         cfg.scene.terrain.terrain_generator.curriculum = True
         cfg.scene.terrain.max_init_terrain_level = None
-        assert cfg.terrain_type == "stairs"
+        assert cfg.terrain_type in ["stairs", "shortstairs"]
         # cfg.curriculum.terrain_levels = CurrTerm(
         #     func=mdp.terrain_levels_vel,
         #     params={"custom_required_distance_for_move_up": 3},
@@ -308,28 +308,27 @@ def set_rewards_complex(cfg):
     cfg.rewards.track_ang_vel_z_exp.params["std"] = 0.6
     cfg.rewards.track_lin_vel_xy_exp.weight = 6
     cfg.rewards.track_ang_vel_z_exp.weight = (
-        1.5  # was 0.75 before adding actuator delay
+        2.5
     )
 
-    cfg.rewards.lin_vel_z_l2.weight = -2.0
-    cfg.rewards.ang_vel_xy_l2.weight = -0.05
-    cfg.rewards.dof_torques_l2.weight = -0.0002 / 4
-    cfg.rewards.dof_acc_l2.weight = -2.5e-7 / 4  # do not use for ResRL
-    cfg.rewards.action_rate_l2.weight = -0.01 / 4
-    cfg.rewards.feet_air_time.weight = 40  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
-    cfg.rewards.undesired_contacts_thigh.weight = -1.0 / 2
-    cfg.rewards.undesired_contacts_calf.weight = -1.0 / 2
-    cfg.rewards.contact_forces.weight = -0.1
-    cfg.rewards.flat_orientation_l2.weight = -0.005
-    cfg.rewards.joint_pos_limits.weight = -5.0  # do not use for ResRL
-    cfg.rewards.torque_limits.weight = -1.0e-5
-    cfg.rewards.ang_vel_xy_l2.weight = -0.5
+    # cfg.rewards.lin_vel_z_l2.weight = -0.2
+    # cfg.rewards.ang_vel_xy_l2.weight = -0.05
+    # cfg.rewards.dof_torques_l2.weight = -0.0002
+    # cfg.rewards.dof_acc_l2.weight = -2.5e-7  # do not use for ResRL
+    # cfg.rewards.action_rate_l2.weight = -0.01 / 6
+    # cfg.rewards.feet_air_time.weight = 60  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
+    # cfg.rewards.undesired_contacts_thigh.weight = -1.0 / 4
+    # cfg.rewards.undesired_contacts_calf.weight = -1.0 / 4
+    # cfg.rewards.contact_forces.weight = -0.1
+    # cfg.rewards.flat_orientation_l2.weight = -0.005
+    # cfg.rewards.joint_pos_limits.weight = -5.0  # do not use for ResRL
+    # cfg.rewards.torque_limits.weight = -1.0e-5 / 2
     # cfg.rewards.joint_deviation_l1_hip.weight = (
     #     -0.75
     # )  # consider reducing this in case performance on task reward is bad
 
-    cfg.rewards.feet_slide.weight = -0.05
-    cfg.rewards.feet_stumble.weight = -0.5
+    # cfg.rewards.feet_slide.weight = -0.05
+    # cfg.rewards.feet_stumble.weight = -0.2
     # TODO: desired base height
 
 

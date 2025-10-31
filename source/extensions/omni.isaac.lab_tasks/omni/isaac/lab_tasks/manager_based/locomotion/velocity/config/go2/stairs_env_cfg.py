@@ -59,7 +59,10 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
         # post init of parent
         super().__post_init__()
 
+        self.terrain_type = "shortstairs"
+        parameters.set_terrain(self)
         parameters.set_rewards_complex(self)
+        parameters.set_curriculum(self, True)
 
         self.episode_length_s = 8.0
         self.scene.terrain.max_init_terrain_level = 0
@@ -75,15 +78,70 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
         }
         self.events.push_robot.interval_range_s = (2.0, 6.0)
         # Random feet pushes
-        self.events.push_feet.params["velocity_range"] = {
-            "x": (-0.02, 0.02),
-            "y": (-0.02, 0.02),
-        }
-        self.events.push_feet.interval_range_s = (1.0, 3.0)
+        # self.events.push_feet.params["velocity_range"] = {
+        #     "x": (-0.02, 0.02),
+        #     "y": (-0.02, 0.02),
+        # }
+        # self.events.push_feet.interval_range_s = (1.0, 3.0)
 
         self.curriculum.terrain_levels.params[
             "custom_required_distance_for_move_up"
         ] = ((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3
+
+        num_steps = [3, 5 + 3, 5 * 2 + 3]
+        warmup_period = 5
+        data = {
+            "undesired_contacts_thigh": {
+                "order": 0,
+                "weight": -1,
+            },
+            "undesired_contacts_calf": {
+                "order": 0,
+                "weight": -1,
+            },
+            "dof_torques_l2": {"order": 1, "weight": -0.006},
+            "dof_acc_l2": {"order": 1, "weight": -2.5e-7},
+            "torque_limits": {"order": 1, "weight": -1.0e-5},
+            "torque_limits_2": {"order": 1, "weight": -1.0e-5 * 3},
+            "feet_stumble": {"order": 0, "weight": -0.5},
+            "feet_slide": {"order": 0, "weight": -0.05},
+            "feet_air_time": {"order": 0, "weight": 60},
+            "contact_forces": {"order": 2, "weight": -0.1},
+            "ang_vel_xy_l2": {"order": 2, "weight": -0.5},
+            "lin_vel_z_l2": {"order": 2, "weight": -0.1},
+            # "joint_deviation_l1_hip": {
+            #     "order": 1,
+            #     "weight": -0.5,
+            # },
+            # "joint_deviation_l1_calf_thigh": {
+            #     "order": 1,
+            #     "weight": -0.1,
+            # },
+            "ang_vel_xy_l2": {
+                "order": 1,
+                "weight": -10.0,
+            },
+            # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 0.01},
+            # "action_rate_l2": {"order": 2, "weight": -0.01 * 0.05},
+        }
+        for key, value in data.items():
+            setattr(
+                self.curriculum,
+                f"{key}_schedule",
+                CurriculumTermCfg(
+                    func=modify_reward_weight,
+                    params={
+                        "term_name": key,
+                        "weight": value["weight"],
+                        "initial_weight": getattr(self.rewards, key).weight,
+                        "num_steps": num_steps[value["order"]],
+                        "warmup_period": getattr(
+                            value, "warmup_period", warmup_period
+                        ),
+                    },
+                ),
+            )
+
 
 
 @configclass
