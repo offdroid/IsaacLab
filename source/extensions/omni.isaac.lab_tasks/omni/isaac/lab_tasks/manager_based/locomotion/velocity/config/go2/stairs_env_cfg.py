@@ -88,8 +88,8 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
             "custom_required_distance_for_move_up"
         ] = ((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3
 
-        num_steps = [3, 5 + 3, 5 * 2 + 3]
-        warmup_period = 5
+        num_steps = [0, 1, 1]
+        warmup_period = 15
         data = {
             "undesired_contacts_thigh": {
                 "order": 0,
@@ -99,16 +99,16 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
                 "order": 0,
                 "weight": -1 / 4,
             },
-            "dof_torques_l2": {"order": 1, "weight": -0.006 / 4},
-            "dof_acc_l2": {"order": 1, "weight": -2.5e-7 / 4},
-            "torque_limits": {"order": 1, "weight": -1.0e-5 / 4},
-            "torque_limits_2": {"order": 1, "weight": -1.0e-5 / 2},
-            "feet_stumble": {"order": 0, "weight": -0.3},
-            "feet_slide": {"order": 0, "weight": -0.03},
+            "dof_torques_l2": {"order": 1, "weight": -0.006 / 6},
+            "dof_acc_l2": {"order": 1, "weight": -2.5e-7 / 6},
+            "torque_limits": {"order": 1, "weight": -1.0e-5 / 6},
+            "torque_limits_2": {"order": 1, "weight": -1.0e-5 / 4},
+            "feet_stumble": {"order": 0, "weight": -0.2},
+            "feet_slide": {"order": 0, "weight": -0.02},
             "feet_air_time": {"order": 0, "weight": 20},
             "contact_forces": {"order": 2, "weight": -0.1},
             "ang_vel_xy_l2": {"order": 2, "weight": -0.5},
-            "lin_vel_z_l2": {"order": 2, "weight": -0.1},
+            "lin_vel_z_l2": {"order": 0, "weight": -0.1},
             # "joint_deviation_l1_hip": {
             #     "order": 1,
             #     "weight": -0.5,
@@ -117,10 +117,6 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
             #     "order": 1,
             #     "weight": -0.1,
             # },
-            "ang_vel_xy_l2": {
-                "order": 1,
-                "weight": -1.0,
-            },
             # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 0.01},
             # "action_rate_l2": {"order": 2, "weight": -0.01 * 0.05},
         }
@@ -135,13 +131,21 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
                         "weight": value["weight"],
                         "initial_weight": getattr(self.rewards, key).weight,
                         "num_steps": num_steps[value["order"]],
-                        "warmup_period": getattr(
-                            value, "warmup_period", warmup_period
-                        ),
+                        "warmup_period": getattr(value, "warmup_period", warmup_period),
                     },
                 ),
             )
 
+        import math
+
+        self.events.reset_base.params["pose_range"] = {
+            "x": (-0.5, 0.5),
+            "y": (-0.9, 0.3),
+            "z": (-0.08, -0.08),
+            # "roll": (-math.radians(20), math.radians(20)),
+            # "pitch": (-math.radians(20), math.radians(20)),
+            "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
+        }
 
 
 @configclass
