@@ -395,7 +395,6 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_velocity_rewards_amp(self)
 
         deployment = False
-        self.rewards.foot_clearance.weight = 1
         if deployment:
             num_steps = [15, 25, 40]
             warmup_period = 20
@@ -484,7 +483,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
-        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_stairsv5fast_feetZAmpl_minimal_stairs_slow/*"
+        self.amp_motion_folder = "datasets/mocap_AMP_for_hardware_reduced/*"
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
     def update_motion_files(self):
