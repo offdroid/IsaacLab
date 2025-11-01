@@ -83,32 +83,41 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
         #     "y": (-0.02, 0.02),
         # }
         # self.events.push_feet.interval_range_s = (1.0, 3.0)
+        self.rewards.foot_clearance.weight = -5
+        self.rewards.feet_air_time.weight = 1
 
         self.curriculum.terrain_levels.params[
             "custom_required_distance_for_move_up"
-        ] = ((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3
+        ] = ((0.7 - 0.3) / 2 + 0.2) * 8 * 2 / 3
 
-        num_steps = [0, 1, 1]
-        warmup_period = 15
+        self.rewards.dof_torques_l2.weight = -0.006 / 5
+        self.rewards.dof_acc_l2.weight = -2.5e-7 / 4
+        self.rewards.torque_limits.weight = -1.0e-5 / 4
+        self.rewards.dof_acc_l2.weight = -2.5e-7 / 5
+        self.rewards.action_rate_l2.weight = -0.01 / 15
+
+        num_steps = [0, 2, 8]
+        warmup_period = 10
         data = {
             "undesired_contacts_thigh": {
                 "order": 0,
-                "weight": -1 / 4,
+                "weight": -1 / 5,
             },
             "undesired_contacts_calf": {
                 "order": 0,
-                "weight": -1 / 4,
+                "weight": -1 / 5,
             },
-            "dof_torques_l2": {"order": 1, "weight": -0.006 / 6},
-            "dof_acc_l2": {"order": 1, "weight": -2.5e-7 / 6},
-            "torque_limits": {"order": 1, "weight": -1.0e-5 / 6},
-            "torque_limits_2": {"order": 1, "weight": -1.0e-5 / 4},
+            # "dof_torques_l2": {"order": 1, "weight": -0.006 / 8},
+            "dof_acc_l2": {"order": 1, "weight": -2.5e-7 / 5},
+            # "torque_limits": {"order": 1, "weight": -1.0e-5 / 4},
+            # "torque_limits_2": {"order": 1, "weight": -1.0e-5 / 4},
             "feet_stumble": {"order": 0, "weight": -0.2},
-            "feet_slide": {"order": 0, "weight": -0.02},
-            "feet_air_time": {"order": 0, "weight": 20},
-            "contact_forces": {"order": 2, "weight": -0.1},
-            "ang_vel_xy_l2": {"order": 2, "weight": -0.5},
-            "lin_vel_z_l2": {"order": 0, "weight": -0.1},
+            "feet_slide": {"order": 2, "weight": -0.02},
+            "feet_air_time": {"order": 2, "weight": 20},
+            # "contact_forces": {"order": 2, "weight": -0.2},
+            "ang_vel_xy_l2": {"order": 1, "weight": -0.05},
+            "lin_vel_z_l2": {"order": 1, "weight": -0.01},
+            # "foot_clearance": {"order": 0, "weight": -1.0},
             # "joint_deviation_l1_hip": {
             #     "order": 1,
             #     "weight": -0.5,
@@ -117,8 +126,8 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
             #     "order": 1,
             #     "weight": -0.1,
             # },
-            # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 0.01},
-            # "action_rate_l2": {"order": 2, "weight": -0.01 * 0.05},
+            # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 / 10},
+            # "action_rate_l2": {"order": 2, "weight": -0.01 / 10},
         }
         for key, value in data.items():
             setattr(
@@ -386,6 +395,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_velocity_rewards_amp(self)
 
         deployment = False
+        self.rewards.foot_clearance.weight = 1
         if deployment:
             num_steps = [15, 25, 40]
             warmup_period = 20

@@ -135,7 +135,11 @@ class ActionsCfg:
     """Action specifications for the MDP."""
 
     joint_pos = mdp.JointPositionActionCfg(
-        asset_name="robot", joint_names=[".*"], scale=0.25, use_default_offset=True
+        # asset_name="robot", joint_names=[".*"], scale=0.25, use_default_offset=True
+        asset_name="robot",
+        joint_names=[".*"],
+        scale=0.25,
+        use_default_offset=True,
     )
 
     # joint_effort = mdp.JointEffortActionCfg(asset_name="robot", joint_names=[".*"], scale=10.0) # torque control; also change Go2 config actuator damping and stiffness to 0.0!
@@ -462,9 +466,7 @@ class RewardsCfg:
     torque_limits_2 = RewTerm(
         func=applied_torque_limits,
         weight=-0.0,
-        params={
-            "limit": 2 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort
-        },
+        params={"limit": 2 * UNITREE_GO2_CFG.actuators["base_legs"].saturation_effort},
     )
     feet_slide = RewTerm(
         func=mdp.feet_slide,
@@ -502,6 +504,10 @@ class RewardsCfg:
             "distance_a": 0.05,
             "distance_b": 0.05,
         },
+    )
+    foot_clearance = RewTerm(
+        func=mdp.foot_clearance_reward,
+        weight=0.0,
     )
 
     sparse_end_of_stairs = RewTerm(

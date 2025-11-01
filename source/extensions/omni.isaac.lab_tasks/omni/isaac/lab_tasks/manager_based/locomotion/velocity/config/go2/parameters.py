@@ -307,9 +307,7 @@ def set_rewards_complex(cfg):
     cfg.rewards.track_lin_vel_xy_exp.params["std"] = 0.6
     cfg.rewards.track_ang_vel_z_exp.params["std"] = 0.6
     cfg.rewards.track_lin_vel_xy_exp.weight = 6
-    cfg.rewards.track_ang_vel_z_exp.weight = (
-        2.5
-    )
+    cfg.rewards.track_ang_vel_z_exp.weight = 2.5
 
     # cfg.rewards.lin_vel_z_l2.weight = -0.2
     # cfg.rewards.ang_vel_xy_l2.weight = -0.05
@@ -449,7 +447,7 @@ def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
         "x": (-0.5, 0.5),
         "y": (-0.9, 0.3),
-        "z": (-0.06, -0.06),
+        "z": (-0.07, -0.07),
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
         "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),

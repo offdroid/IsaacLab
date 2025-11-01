@@ -415,20 +415,20 @@ def foot_clearance_reward(
     )
     for i in range(len(feet_names)):
         feet_indices[i] = asset.find_bodies(feet_names[i])[0][0]
-    feet_indices = asset_cfg.body_ids
+    # feet_indices = asset_cfg.body_ids
 
     feet_pos = rigid_body_states[:, feet_indices, 0:3]
     feet_vel = rigid_body_states[:, feet_indices, 7:10]
 
     cur_footpos_translated = feet_pos - root_states[:, 0:3].unsqueeze(1)
     footpos_in_body_frame = torch.zeros(
-        num_envs, len(feet_indices), 3, device=asset.device
+        num_envs, len(feet_names), 3, device=asset.device
     )
     cur_footvel_translated = feet_vel - root_states[:, 7:10].unsqueeze(1)
     footvel_in_body_frame = torch.zeros(
-        num_envs, len(feet_indices), 3, device=asset.device
+        num_envs, len(feet_names), 3, device=asset.device
     )
-    for i in range(len(feet_indices)):
+    for i in range(len(feet_names)):
         footpos_in_body_frame[:, i, :] = quat_rotate_inverse(
             base_quat, cur_footpos_translated[:, i, :]
         )
@@ -469,7 +469,10 @@ def sparse_end_of_stairs_reward(
         ].y_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
     )
 
-    on_stairs = torch.logical_and(y_position_relative >= 0.0, y_position_relative - (num_steps + 0.5) * step_width <= 0)
+    on_stairs = torch.logical_and(
+        y_position_relative >= 0.0,
+        y_position_relative - (num_steps + 0.5) * step_width <= 0,
+    )
     over_stairs = y_position_relative - num_steps * step_width >= 0.0
 
     # has_passed = over_stairs
@@ -487,7 +490,9 @@ def sparse_end_of_stairs_reward(
     # env.has_passed_target[is_first_pass] = 1
 
     passed_step = (y_position_relative // step_width) * on_stairs
-    higher_target_reached = torch.logical_and(passed_step > env.has_passed_target, on_stairs)
+    higher_target_reached = torch.logical_and(
+        passed_step > env.has_passed_target, on_stairs
+    )
     env.has_passed_target[higher_target_reached] += 1
     reward = torch.where(
         higher_target_reached,
