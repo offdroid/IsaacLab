@@ -87,7 +87,7 @@ def set_curriculum(cfg, enable: bool):
         # )
     else:
         cfg.scene.terrain.terrain_generator.curriculum = True
-        cfg.scene.terrain.max_init_terrain_level = None
+        cfg.scene.terrain.max_init_terrain_level = 0
         assert cfg.terrain_type in ["stairs", "shortstairs"]
         # cfg.curriculum.terrain_levels = CurrTerm(
         #     func=mdp.terrain_levels_vel,
