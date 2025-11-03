@@ -87,7 +87,7 @@ def set_curriculum(cfg, enable: bool):
         # )
     else:
         cfg.scene.terrain.terrain_generator.curriculum = True
-        cfg.scene.terrain.max_init_terrain_level = None
+        cfg.scene.terrain.max_init_terrain_level = 0
         assert cfg.terrain_type in ["stairs", "shortstairs"]
         # cfg.curriculum.terrain_levels = CurrTerm(
         #     func=mdp.terrain_levels_vel,
@@ -106,8 +106,8 @@ def set_curriculum(cfg, enable: bool):
             "stairs"
         ].mode = "scaled_norm_widthprio"
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
-            0.26,
-            0.37,
+            0.28,
+            0.32,
         )
         # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
