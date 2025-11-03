@@ -64,11 +64,19 @@ def set_curriculum(cfg, enable: bool):
         else:
             print("[WARN] Curriculum Manager is disabled.")
 
+        assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
+        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
-            0.0,
+            0.14,
             0.20,
         )
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
+        cfg.scene.terrain.terrain_generator.sub_terrains[
+            "stairs"
+        ].mode = "scaled_norm_widthprio"
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
+            0.28,
+            0.32,
+        )
 
         # cfg.curriculum.sparse_reward_schedule = CurrTerm(
         #     func=modify_reward_weight,
