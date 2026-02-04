@@ -70,9 +70,9 @@ def set_curriculum(cfg, enable: bool):
             0.14,
             0.20,
         )
-        cfg.scene.terrain.terrain_generator.sub_terrains[
-            "stairs"
-        ].mode = "scaled_norm_widthprio"
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].mode = (
+            "scaled_norm_widthprio"
+        )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
             0.28,
             0.32,
@@ -110,9 +110,9 @@ def set_curriculum(cfg, enable: bool):
             0.14,
             0.20,
         )
-        cfg.scene.terrain.terrain_generator.sub_terrains[
-            "stairs"
-        ].mode = "scaled_norm_widthprio"
+        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].mode = (
+            "scaled_norm_widthprio"
+        )
         cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
             0.28,
             0.32,
@@ -130,9 +130,9 @@ def set_terrain(cfg):
         cfg.scene.height_scanner = None
         cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "rough":
-        assert cfg.scene.terrain.terrain_generator == ROUGH_TERRAINS_CFG, (
-            "Expected ROUGH_TERRAINS_CFG as default terrain generator."
-        )
+        assert (
+            cfg.scene.terrain.terrain_generator == ROUGH_TERRAINS_CFG
+        ), "Expected ROUGH_TERRAINS_CFG as default terrain generator."
         # scale down the terrains because the robot is small
         cfg.scene.terrain.terrain_generator.sub_terrains["boxes"].grid_height_range = (
             0.025,
@@ -142,9 +142,9 @@ def set_terrain(cfg):
             0.01,
             0.06,
         )
-        cfg.scene.terrain.terrain_generator.sub_terrains[
-            "random_rough"
-        ].noise_step = 0.01
+        cfg.scene.terrain.terrain_generator.sub_terrains["random_rough"].noise_step = (
+            0.01
+        )
     elif cfg.terrain_type == "stairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         cfg.scene.height_scanner = None
@@ -458,7 +458,8 @@ def set_stairs_env_cfg_reset_base(cfg):
         "z": (-0.07, -0.07),
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
-        "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
+        # "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
+        "yaw": (-math.pi / 2, math.pi / 2),
     }
 
 
@@ -596,9 +597,9 @@ def disable_domain_randomization(cfg):
         "[INFO] Domain Randomization disabled. Note that you can probably train with much lower max_iterations compared to when using Domain Randomization."
     )
 
-    assert not cfg.terrain_type == "flat_noisy", (
-        "flat_noisy is only for Domain Randomization."
-    )
+    assert (
+        not cfg.terrain_type == "flat_noisy"
+    ), "flat_noisy is only for Domain Randomization."
 
 
 def zero_domain_randomization(cfg):
@@ -637,9 +638,9 @@ def zero_domain_randomization(cfg):
         "[INFO] Zero Domain Randomization. This setting is not meant for any DRL training."
     )
 
-    assert not cfg.terrain_type == "flat_noisy", (
-        "flat_noisy is only for Domain Randomization."
-    )
+    assert (
+        not cfg.terrain_type == "flat_noisy"
+    ), "flat_noisy is only for Domain Randomization."
 
 
 def set_standing_env_terminations(cfg):

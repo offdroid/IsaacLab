@@ -386,11 +386,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         self.terrain_type = "stairs"
         parameters.set_terrain(self)
-        parameters.set_curriculum(self, enable=False)
+        parameters.set_curriculum(self, enable=True)
         parameters.set_stairs_env_cfg_cmds(self)
         parameters.set_stairs_env_cfg_reset_base(self)
         parameters.add_relative_position_on_stairs_observation(self)
-        self.observations.policy.yaw = None
+        # self.observations.policy.yaw = None
         # self.observations.policy.relative_position = None
         parameters.add_stair_parameters_observation(self)
 
