@@ -56,7 +56,7 @@ class MeshStairsTerrainCfg(SubTerrainBaseCfg):
 
     function = mesh_terrains.stairs_terrain
 
-    border_width: float = 0.2
+    border_width: float = 0.0
     """The width of the border around the terrain (in m). Defaults to 0.0.
     The border is a flat terrain with the same height as the terrain.
     """

@@ -88,7 +88,7 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
 
         self.curriculum.terrain_levels.params[
             "custom_required_distance_for_move_up"
-        ] = ((0.7 - 0.3) / 2 + 0.2) * 8 * 2 / 3
+        ] = (((0.7 - 0.3) / 2 + 0.2) * 8 * 2 / 3)
 
         self.rewards.dof_torques_l2.weight = -0.006 / 5
         self.rewards.dof_acc_l2.weight = -2.5e-7 / 4
@@ -310,7 +310,9 @@ class modify_env_param(ManagerTermBase):
 
         elif isinstance(self._container, object):
             get_value = lambda: getattr(self._container, self._last_path)  # noqa: E731
-            set_value = lambda val: setattr(self._container, self._last_path, val)  # noqa: E731
+            set_value = lambda val: setattr(
+                self._container, self._last_path, val
+            )  # noqa: E731
         else:
             raise TypeError(
                 f"Unable to build accessors for address '{path}'. Unknown type found for access variable:"
@@ -572,9 +574,10 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         }
         self.events.push_feet.interval_range_s = (1.0, 3.0)
 
-        self.curriculum.terrain_levels.params[
-            "custom_required_distance_for_move_up"
-        ] = ((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3
+        if self.curriculum.terrain_levels is not None:
+            self.curriculum.terrain_levels.params[
+                "custom_required_distance_for_move_up"
+            ] = (((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3)
 
 
 @configclass
@@ -639,7 +642,7 @@ class AMPUnitreeGo2ShortStairsBasicEnvCfg(AMPUnitreeGo2StairsEnvCfg):
 
         self.curriculum.terrain_levels.params[
             "custom_required_distance_for_move_up"
-        ] = ((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3
+        ] = (((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3)
 
 
 @configclass
