@@ -323,7 +323,7 @@ def stairs_terrain(
         cfg=HfRandomUniformTerrainCfg(
             # proportion=bottom_platform_proportions,
             size=(terrain_size[0], cfg.platform_width_bottom),
-            noise_range=(0.0, 0.02 * difficulty * 2.5),
+            noise_range=(0.0, 0.05 * torch.rand([])),
             noise_step=0.01,
             border_width=0.0,
         ),

@@ -389,10 +389,10 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
         parameters.set_curriculum(self, enable=True)
         parameters.set_stairs_env_cfg_cmds(self)
         parameters.set_stairs_env_cfg_reset_base(self)
-        parameters.add_relative_position_on_stairs_observation(self)
+        # parameters.add_relative_position_on_stairs_observation(self)
         # self.observations.policy.yaw = None
         # self.observations.policy.relative_position = None
-        parameters.add_stair_parameters_observation(self)
+        # parameters.add_stair_parameters_observation(self)
 
         parameters.set_velocity_rewards_amp(self)
 
@@ -475,6 +475,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             "pitch": (-0.1, 0.1),
             "yaw": (-0.1, 0.1),
         }
+        self.events.push_robot.interval_range_s = (2.0, 6.0)
         # self.events.base_external_force_torque.params["torque_range"] = (-0.1, 0.1)
         # self.events.base_external_force_torque.params["force_range"] = (-0.1, 0.1)
 
@@ -566,11 +567,11 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
             "pitch": (-0.1, 0.1),
             "yaw": (-0.1, 0.1),
         }
-        self.events.push_robot.interval_range_s = (2.0, 6.0)
+        self.events.push_robot.interval_range_s = (1.0, 5.0)
         # Random feet pushes
         self.events.push_feet.params["velocity_range"] = {
-            "x": (-0.02, 0.02),
-            "y": (-0.02, 0.02),
+            "x": (-0.04, 0.04),
+            "y": (-0.04, 0.04),
         }
         self.events.push_feet.interval_range_s = (1.0, 3.0)
 

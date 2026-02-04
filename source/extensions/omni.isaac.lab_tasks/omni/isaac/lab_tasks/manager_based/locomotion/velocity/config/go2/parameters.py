@@ -121,14 +121,17 @@ def set_curriculum(cfg, enable: bool):
 
 
 def set_terrain(cfg):
+    use_height_scanner = True
+
     if cfg.terrain_type == "flat":
         # change terrain to flat
         cfg.scene.terrain.terrain_type = "plane"
         cfg.scene.terrain.terrain_generator = None
         cfg.curriculum.terrain_levels = None
         # no height scan
-        cfg.scene.height_scanner = None
-        cfg.observations.policy.height_scan = None
+        if not use_height_scanner:
+            cfg.scene.height_scanner = None
+            cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "rough":
         assert (
             cfg.scene.terrain.terrain_generator == ROUGH_TERRAINS_CFG
@@ -147,8 +150,9 @@ def set_terrain(cfg):
         )
     elif cfg.terrain_type == "stairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
-        cfg.scene.height_scanner = None
-        cfg.observations.policy.height_scan = None
+        if not use_height_scanner:
+            cfg.scene.height_scanner = None
+            cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "shortstairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 5)
@@ -166,8 +170,9 @@ def set_terrain(cfg):
             6,
         )
         cfg.commands.base_velocity.resample_epsiode_length = (4, 4)
-        cfg.scene.height_scanner = None
-        cfg.observations.policy.height_scan = None
+        if not use_height_scanner:
+            cfg.scene.height_scanner = None
+            cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "box":
         cfg.scene.terrain.terrain_generator = BOX_TERRAINS_CFG
         cfg.scene.height_scanner = None
