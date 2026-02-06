@@ -46,7 +46,10 @@ def height_field_to_mesh(func: Callable) -> Callable:
         border_pixels = int(cfg.border_width / cfg.horizontal_scale) + 1
         heights = np.zeros((width_pixels, length_pixels), dtype=np.int16)
         # override size of the terrain to account for the border
-        sub_terrain_size = [width_pixels - 2 * border_pixels, length_pixels - 2 * border_pixels]
+        sub_terrain_size = [
+            width_pixels - 2 * border_pixels,
+            length_pixels - 2 * border_pixels,
+        ]
         sub_terrain_size = [dim * cfg.horizontal_scale for dim in sub_terrain_size]
         # update the config
         terrain_size = copy.deepcopy(cfg.size)
@@ -71,13 +74,19 @@ def height_field_to_mesh(func: Callable) -> Callable:
         origin_z = np.max(heights[x1:x2, y1:y2]) * cfg.vertical_scale
         origin = np.array([0.5 * cfg.size[0], 0.5 * cfg.size[1], origin_z])
         # return mesh and origin
+        if hasattr(cfg, "offset"):
+            mesh.apply_translation(cfg.offset)
+            origin += np.array(cfg.offset)
         return [mesh], origin
 
     return wrapper
 
 
 def convert_height_field_to_mesh(
-    height_field: np.ndarray, horizontal_scale: float, vertical_scale: float, slope_threshold: float | None = None
+    height_field: np.ndarray,
+    horizontal_scale: float,
+    vertical_scale: float,
+    slope_threshold: float | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Convert a height-field array to a triangle mesh represented by vertices and triangles.
 
@@ -134,17 +143,27 @@ def convert_height_field_to_mesh(
         move_y = np.zeros((num_rows, num_cols))
         move_corners = np.zeros((num_rows, num_cols))
         # move vertices along the x-axis
-        move_x[: num_rows - 1, :] += hf[1:num_rows, :] - hf[: num_rows - 1, :] > slope_threshold
-        move_x[1:num_rows, :] -= hf[: num_rows - 1, :] - hf[1:num_rows, :] > slope_threshold
+        move_x[: num_rows - 1, :] += (
+            hf[1:num_rows, :] - hf[: num_rows - 1, :] > slope_threshold
+        )
+        move_x[1:num_rows, :] -= (
+            hf[: num_rows - 1, :] - hf[1:num_rows, :] > slope_threshold
+        )
         # move vertices along the y-axis
-        move_y[:, : num_cols - 1] += hf[:, 1:num_cols] - hf[:, : num_cols - 1] > slope_threshold
-        move_y[:, 1:num_cols] -= hf[:, : num_cols - 1] - hf[:, 1:num_cols] > slope_threshold
+        move_y[:, : num_cols - 1] += (
+            hf[:, 1:num_cols] - hf[:, : num_cols - 1] > slope_threshold
+        )
+        move_y[:, 1:num_cols] -= (
+            hf[:, : num_cols - 1] - hf[:, 1:num_cols] > slope_threshold
+        )
         # move vertices along the corners
         move_corners[: num_rows - 1, : num_cols - 1] += (
-            hf[1:num_rows, 1:num_cols] - hf[: num_rows - 1, : num_cols - 1] > slope_threshold
+            hf[1:num_rows, 1:num_cols] - hf[: num_rows - 1, : num_cols - 1]
+            > slope_threshold
         )
         move_corners[1:num_rows, 1:num_cols] -= (
-            hf[: num_rows - 1, : num_cols - 1] - hf[1:num_rows, 1:num_cols] > slope_threshold
+            hf[: num_rows - 1, : num_cols - 1] - hf[1:num_rows, 1:num_cols]
+            > slope_threshold
         )
         xx += (move_x + move_corners * (move_x == 0)) * horizontal_scale
         yy += (move_y + move_corners * (move_y == 0)) * horizontal_scale

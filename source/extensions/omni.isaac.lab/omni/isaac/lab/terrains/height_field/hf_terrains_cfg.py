@@ -52,6 +52,8 @@ class HfRandomUniformTerrainCfg(HfTerrainBaseCfg):
     The heights are sampled at this resolution and interpolation is performed for intermediate points.
     This must be larger than or equal to the :obj:`horizontal scale`.
     """
+    offset: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    """The offset of the terrain (in m). Defaults to (0.0, 0.0, 0.0)."""
 
 
 @configclass
