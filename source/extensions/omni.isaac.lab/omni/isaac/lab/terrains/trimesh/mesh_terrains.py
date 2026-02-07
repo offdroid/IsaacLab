@@ -280,7 +280,6 @@ def _compute_stairs_parameters(
 def stairs_terrain(
     difficulty: float, cfg: mesh_terrains_cfg.MeshStairsTerrainCfg
 ) -> tuple[list[trimesh.Trimesh], np.ndarray]:
-    difficulty = 1
     # Resolve terrain parameters
     terrain_params = _compute_stairs_parameters(difficulty, cfg, verbose=True)
     available_y_for_stairs = terrain_params["available_y_for_stairs"]
