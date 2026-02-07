@@ -44,8 +44,8 @@ def set_play_settings_flat(cfg):
 def set_play_settings_rough(cfg):
     # reduce the number of terrains to save memory
     if cfg.scene.terrain.terrain_generator is not None:
-        cfg.scene.terrain.terrain_generator.num_rows = 5
-        cfg.scene.terrain.terrain_generator.num_cols = 5
+        cfg.scene.terrain.terrain_generator.num_rows = 1
+        cfg.scene.terrain.terrain_generator.num_cols = 1
         cfg.scene.terrain.terrain_generator.curriculum = False
 
         # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
@@ -460,7 +460,7 @@ def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
         "x": (-0.5, 0.5),
         "y": (-0.9, 0.3),
-        "z": (-0.07, -0.07),
+        "z": (-0.04, -0.04),
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
         # "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),

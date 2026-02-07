@@ -14,6 +14,11 @@ import torch
 import trimesh
 from typing import TYPE_CHECKING
 
+from omni.isaac.lab.terrains.height_field.hf_terrains import random_uniform_terrain
+from omni.isaac.lab.terrains.height_field.hf_terrains_cfg import (
+    HfRandomUniformTerrainCfg,
+)
+
 from .utils import *  # noqa: F401, F403
 from .utils import make_border, make_plane
 
@@ -259,7 +264,7 @@ def _compute_stairs_parameters(
         num_steps = int(torch.rand([]) * (upper_limit - lower_limit) + lower_limit)
     if verbose:
         print(
-            f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f}"
+            f"[INFO] Generated Terrains with num_steps: {num_steps}, stair height: {step_height:.2f}, stair width: {step_width:.2f} for {difficulty} difficulty."
         )
     assert (
         num_steps >= 1
@@ -312,29 +317,26 @@ def stairs_terrain(
         cfg.border_width + cfg.platform_width_bottom / 2,
         -step_height / 2,  # Center at half height // ground level
     ]
-    # bottom_platform = trimesh.creation.box(
-    #     (terrain_size[0], cfg.platform_width_bottom, step_height),
-    #     trimesh.transformations.translation_matrix(bottom_platform_center),
-    # )
-    # meshes_list.append(bottom_platform)
-    # bottom_platform_proportions = cfg.platform_width_bottom / terrain_size[0]
-    from omni.isaac.lab.terrains.height_field.hf_terrains import random_uniform_terrain
-    from omni.isaac.lab.terrains.height_field.hf_terrains_cfg import (
-        HfRandomUniformTerrainCfg,
-    )
 
-    bottom_platform, _ = random_uniform_terrain(
-        difficulty=difficulty,
-        cfg=HfRandomUniformTerrainCfg(
-            # proportion=bottom_platform_proportions,
-            size=(terrain_size[0], cfg.platform_width_bottom),
-            noise_range=(0.0, 0.025 * torch.rand([])),
-            noise_step=0.01,
-            border_width=0.0,
-            offset=(0, 0, 0),
-        ),
-    )
-    meshes_list.append(bottom_platform[0])
+    if cfg.rough_surface:
+        bottom_platform, _ = random_uniform_terrain(
+            difficulty=difficulty,
+            cfg=HfRandomUniformTerrainCfg(
+                # proportion=bottom_platform_proportions,
+                size=(terrain_size[0], cfg.platform_width_bottom),
+                noise_range=(0.0, 0.025 * torch.rand([])),
+                noise_step=0.01,
+                border_width=0.0,
+                offset=(0, 0, 0),
+            ),
+        )
+        meshes_list.append(bottom_platform[0])
+    else:
+        bottom_platform = trimesh.creation.box(
+            (terrain_size[0], cfg.platform_width_bottom, step_height),
+            trimesh.transformations.translation_matrix(bottom_platform_center),
+        )
+        meshes_list.append(bottom_platform)
 
     cum_height_error = 0.0
     cum_width_error = 0.0
@@ -376,27 +378,28 @@ def stairs_terrain(
             trimesh.transformations.translation_matrix(step_center),
         )
         meshes_list.append(step_mesh)
-        print(terrain_size[0], _step_width)
-        step_mesh_rough, _ = random_uniform_terrain(
-            difficulty=difficulty,
-            cfg=HfRandomUniformTerrainCfg(
-                horizontal_scale=0.05,
-                size=(terrain_size[0], _step_width),
-                noise_range=(0.0, difficulty * 0.025 * torch.rand([])),
-                noise_step=0.01,
-                border_width=0.0,
-                offset=(
-                    0,
-                    # step * step_width,
-                    # 0,
-                    # step * step_width.cpu().detach().item(),
-                    # step * step_height.cpu().detach().item(),
-                    cfg.platform_width_bottom + step * step_width,
-                    (step + 1) * step_height,
+
+        if cfg.rough_surface:
+            step_mesh_rough, _ = random_uniform_terrain(
+                difficulty=difficulty,
+                cfg=HfRandomUniformTerrainCfg(
+                    horizontal_scale=0.05,
+                    size=(terrain_size[0], _step_width),
+                    noise_range=(0.0, difficulty * 0.025 * torch.rand([])),
+                    noise_step=0.01,
+                    border_width=0.0,
+                    offset=(
+                        0,
+                        # step * step_width,
+                        # 0,
+                        # step * step_width.cpu().detach().item(),
+                        # step * step_height.cpu().detach().item(),
+                        cfg.platform_width_bottom + step * step_width,
+                        (step + 1) * step_height,
+                    ),
                 ),
-            ),
-        )
-        meshes_list.append(step_mesh_rough[0])
+            )
+            meshes_list.append(step_mesh_rough[0])
 
     # sanity check if the center of the top platform is equal for approaching it from left (y=0) and right (y=cfg.size[1])
     # assert math.isclose(

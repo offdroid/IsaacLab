@@ -65,8 +65,8 @@ class MeshStairsTerrainCfg(SubTerrainBaseCfg):
     platform_width_top: float = 20
     """The width of the top platform."""
     platform_width_bottom: float = 5
-    """The width of the bottom platform."""
-    holes: bool = False
+
+    rough_surface: bool = False
 
     num_steps_range: tuple[int, int] | None = None
     """Number of steps to generate. Use this to limit the number of steps despite the environment length allowing for more stpes. The upper limit is clipped by the number of stairs that fit in the space."""
