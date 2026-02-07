@@ -66,17 +66,18 @@ def set_curriculum(cfg, enable: bool):
 
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
         cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
-            0.14,
-            0.20,
-        )
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].mode = (
-            "scaled_norm_widthprio"
-        )
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
-            0.28,
-            0.32,
-        )
+        for k in ["stairs", "stairs_rough"]:
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].step_height_range = (
+                0.14,
+                0.20,
+            )
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].mode = (
+                "scaled_norm_widthprio"
+            )
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].step_width = (
+                0.28,
+                0.32,
+            )
 
         # cfg.curriculum.sparse_reward_schedule = CurrTerm(
         #     func=modify_reward_weight,
@@ -106,17 +107,19 @@ def set_curriculum(cfg, enable: bool):
         )
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
         cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
-            0.14,
-            0.20,
-        )
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].mode = (
-            "scaled_norm_widthprio"
-        )
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = (
-            0.28,
-            0.32,
-        )
+
+        for k in ["stairs", "stairs_rough"]:
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].step_height_range = (
+                0.14,
+                0.20,
+            )
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].mode = (
+                "scaled_norm_widthprio"
+            )
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].step_width = (
+                0.28,
+                0.32,
+            )
         # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
 
@@ -156,19 +159,21 @@ def set_terrain(cfg):
     elif cfg.terrain_type == "shortstairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
         cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 5)
-        cfg.scene.terrain.terrain_generator.sub_terrains[
-            "stairs"
-        ].platform_width_top = 5
-        cfg.scene.terrain.terrain_generator.sub_terrains[
-            "stairs"
-        ].platform_width_bottom = 5
-        cfg.scene.terrain.terrain_generator.sub_terrains[
-            "stairs"
-        ].y_coordinate_origin_relative_to_first_stair_step = -0.7
-        cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].num_steps_range = (
-            1,
-            6,
-        )
+
+        for k in ["stairs", "stairs_rough"]:
+            cfg.scene.terrain.terrain_generator.sub_terrains[
+                k
+            ].platform_width_top = 5
+            cfg.scene.terrain.terrain_generator.sub_terrains[
+                k
+            ].platform_width_bottom = 5
+            cfg.scene.terrain.terrain_generator.sub_terrains[
+                k
+            ].y_coordinate_origin_relative_to_first_stair_step = -0.7
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].num_steps_range = (
+                1,
+                6,
+            )
         cfg.commands.base_velocity.resample_epsiode_length = (4, 4)
         if not use_height_scanner:
             cfg.scene.height_scanner = None
