@@ -328,7 +328,7 @@ def stairs_terrain(
         cfg=HfRandomUniformTerrainCfg(
             # proportion=bottom_platform_proportions,
             size=(terrain_size[0], cfg.platform_width_bottom),
-            noise_range=(0.0, 0.05 * torch.rand([])),
+            noise_range=(0.0, 0.025 * torch.rand([])),
             noise_step=0.01,
             border_width=0.0,
             offset=(0, 0, 0),
@@ -382,7 +382,7 @@ def stairs_terrain(
             cfg=HfRandomUniformTerrainCfg(
                 horizontal_scale=0.05,
                 size=(terrain_size[0], _step_width),
-                noise_range=(0.0, difficulty * 0.05 * torch.rand([])),
+                noise_range=(0.0, difficulty * 0.025 * torch.rand([])),
                 noise_step=0.01,
                 border_width=0.0,
                 offset=(
@@ -427,7 +427,7 @@ def stairs_terrain(
         difficulty=difficulty,
         cfg=HfRandomUniformTerrainCfg(
             size=(terrain_size[0], cfg.platform_width_top),
-            noise_range=(0.0, difficulty * 0.05 * torch.rand([])),
+            noise_range=(0.0, difficulty * 0.025 * torch.rand([])),
             noise_step=0.01,
             border_width=0.0,
             offset=(
