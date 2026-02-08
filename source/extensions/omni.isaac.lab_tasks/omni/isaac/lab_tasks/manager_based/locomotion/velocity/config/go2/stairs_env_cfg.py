@@ -129,32 +129,32 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
             # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 / 10},
             # "action_rate_l2": {"order": 2, "weight": -0.01 / 10},
         }
-            for key, value in data.items():
-                setattr(
-                    self.curriculum,
-                    f"{key}_schedule",
-                    CurriculumTermCfg(
-                        func=modify_reward_weight,
-                        params={
-                            "term_name": key,
-                            "weight": value["weight"],
-                            "initial_weight": getattr(self.rewards, key).weight,
-                            "num_steps": num_steps[value["order"]],
-                            "warmup_period": getattr(value, "warmup_period", warmup_period),
-                        },
-                    ),
-                )
+        for key, value in data.items():
+            setattr(
+                self.curriculum,
+                f"{key}_schedule",
+                CurriculumTermCfg(
+                    func=modify_reward_weight,
+                    params={
+                        "term_name": key,
+                        "weight": value["weight"],
+                        "initial_weight": getattr(self.rewards, key).weight,
+                        "num_steps": num_steps[value["order"]],
+                        "warmup_period": getattr(value, "warmup_period", warmup_period),
+                    },
+                ),
+            )
 
-            import math
+        import math
 
-            self.events.reset_base.params["pose_range"] = {
-                "x": (-0.5, 0.5),
-                "y": (-0.9, 0.3),
-                "z": (-0.08, -0.08),
-                # "roll": (-math.radians(20), math.radians(20)),
-                # "pitch": (-math.radians(20), math.radians(20)),
-                "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
-            }
+        self.events.reset_base.params["pose_range"] = {
+            "x": (-0.5, 0.5),
+            "y": (-0.9, 0.3),
+            "z": (-0.08, -0.08),
+            # "roll": (-math.radians(20), math.radians(20)),
+            # "pitch": (-math.radians(20), math.radians(20)),
+            "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
+        }
 
 
     @configclass
@@ -403,19 +403,19 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             # self.rewards.stand_still.weight = -5
             self.rewards.feet_contact_without_cmd.weight = 0.1
             self.rewards.feet_air_time.weight = 100
-            self.rewards.feet_on_step.weight = 0
+            # self.rewards.feet_on_step.weight = 0
             self.rewards.ang_vel_xy_l2.weight = 0
             self.rewards.ang_vel_x_l2.weight = 0
             self.rewards.sparse_end_of_stairs.weight = 0
 
-            self.rewards.feet_on_step.params["distance_a"] = 0.02
-            self.rewards.feet_on_step.params["distance_b"] = 0.02
+            # self.rewards.feet_on_step.params["distance_a"] = 0.02
+            # self.rewards.feet_on_step.params["distance_b"] = 0.02
 
             data = {
-                "feet_on_step": {
-                    "order": 0,
-                    "weight": -40,
-                },
+                # "feet_on_step": {
+                #     "order": 0,
+                #     "weight": -40,
+                # },
                 "undesired_contacts_thigh": {
                     "order": 0,
                     "weight": -20 * 0.5,
