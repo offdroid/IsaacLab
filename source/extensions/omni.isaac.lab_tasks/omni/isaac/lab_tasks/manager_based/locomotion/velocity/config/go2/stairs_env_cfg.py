@@ -129,102 +129,102 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
             # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 / 10},
             # "action_rate_l2": {"order": 2, "weight": -0.01 / 10},
         }
-        for key, value in data.items():
-            setattr(
-                self.curriculum,
-                f"{key}_schedule",
-                CurriculumTermCfg(
-                    func=modify_reward_weight,
-                    params={
-                        "term_name": key,
-                        "weight": value["weight"],
-                        "initial_weight": getattr(self.rewards, key).weight,
-                        "num_steps": num_steps[value["order"]],
-                        "warmup_period": getattr(value, "warmup_period", warmup_period),
-                    },
-                ),
-            )
+            for key, value in data.items():
+                setattr(
+                    self.curriculum,
+                    f"{key}_schedule",
+                    CurriculumTermCfg(
+                        func=modify_reward_weight,
+                        params={
+                            "term_name": key,
+                            "weight": value["weight"],
+                            "initial_weight": getattr(self.rewards, key).weight,
+                            "num_steps": num_steps[value["order"]],
+                            "warmup_period": getattr(value, "warmup_period", warmup_period),
+                        },
+                    ),
+                )
 
-        import math
+            import math
 
-        self.events.reset_base.params["pose_range"] = {
-            "x": (-0.5, 0.5),
-            "y": (-0.9, 0.3),
-            "z": (-0.08, -0.08),
-            # "roll": (-math.radians(20), math.radians(20)),
-            # "pitch": (-math.radians(20), math.radians(20)),
-            "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
-        }
+            self.events.reset_base.params["pose_range"] = {
+                "x": (-0.5, 0.5),
+                "y": (-0.9, 0.3),
+                "z": (-0.08, -0.08),
+                # "roll": (-math.radians(20), math.radians(20)),
+                # "pitch": (-math.radians(20), math.radians(20)),
+                "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
+            }
 
 
-@configclass
-class UnitreeGo2StairsEnvCfgComplexReward_PLAY(UnitreeGo2StairsEnvCfgComplexReward):
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
+    @configclass
+    class UnitreeGo2StairsEnvCfgComplexReward_PLAY(UnitreeGo2StairsEnvCfgComplexReward):
+        def __post_init__(self):
+            # post init of parent
+            super().__post_init__()
 
-        parameters.set_play_settings_flat(self)
-        parameters.set_play_settings_rough(self)
+            parameters.set_play_settings_flat(self)
+            parameters.set_play_settings_rough(self)
 
 
 #######################################################################
 # Stairs AMP
-from typing import ClassVar
+    from typing import ClassVar
 
 
-class modify_env_param(ManagerTermBase):
-    NO_CHANGE: ClassVar = object()
-    """Special token to indicate no change in the value to be set.
+    class modify_env_param(ManagerTermBase):
+        NO_CHANGE: ClassVar = object()
+        """Special token to indicate no change in the value to be set.
 
-    This token is used to signal that the `modify_fn` did not produce a new value. It can
-    be returned by the `modify_fn` to indicate that the current value should remain unchanged.
-    """
+        This token is used to signal that the `modify_fn` did not produce a new value. It can
+        be returned by the `modify_fn` to indicate that the current value should remain unchanged.
+        """
 
-    def __init__(self, cfg: CurriculumTermCfg, env: ManagerBasedRLEnv):
-        super().__init__(cfg, env)
-        # resolve term configuration
-        if "address" not in cfg.params:
-            raise ValueError(
-                "The 'address' parameter must be specified in the curriculum term configuration."
-            )
+        def __init__(self, cfg: CurriculumTermCfg, env: ManagerBasedRLEnv):
+            super().__init__(cfg, env)
+            # resolve term configuration
+            if "address" not in cfg.params:
+                raise ValueError(
+                    "The 'address' parameter must be specified in the curriculum term configuration."
+                )
 
-        # store current address
-        self._address: str = cfg.params["address"]
-        # store accessor functions
-        self._get_fn: callable = None
-        self._set_fn: callable = None
+            # store current address
+            self._address: str = cfg.params["address"]
+            # store accessor functions
+            self._get_fn: callable = None
+            self._set_fn: callable = None
 
-    def __del__(self):
-        """Destructor to clean up the compiled functions."""
-        # clear the getter and setter functions
-        self._get_fn = None
-        self._set_fn = None
-        self._container = None
-        self._last_path = None
+        def __del__(self):
+            """Destructor to clean up the compiled functions."""
+            # clear the getter and setter functions
+            self._get_fn = None
+            self._set_fn = None
+            self._container = None
+            self._last_path = None
 
-    """
-    Operations.
-    """
+        """
+        Operations.
+        """
 
-    def __call__(
-        self,
-        env: ManagerBasedRLEnv,
-        env_ids: Sequence[int],
-        address: str,
-        modify_fn: callable,
-        modify_params: dict | None = None,
-    ):
-        # fetch the getter and setter functions if not already compiled
-        if not self._get_fn:
-            self._get_fn, self._set_fn = self._process_accessors(
-                self._env, self._address
-            )
+        def __call__(
+            self,
+            env: ManagerBasedRLEnv,
+            env_ids: Sequence[int],
+            address: str,
+            modify_fn: callable,
+            modify_params: dict | None = None,
+        ):
+            # fetch the getter and setter functions if not already compiled
+            if not self._get_fn:
+                self._get_fn, self._set_fn = self._process_accessors(
+                    self._env, self._address
+                )
 
-        # resolve none type
-        modify_params = {} if modify_params is None else modify_params
+            # resolve none type
+            modify_params = {} if modify_params is None else modify_params
 
-        # get the current value of the target attribute
-        data = self._get_fn()
+            # get the current value of the target attribute
+            data = self._get_fn()
         # modify the value using the provided function
         new_val = modify_fn(self._env, env_ids, data, **modify_params)
         # set the modified value back to the target attribute
@@ -396,7 +396,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_velocity_rewards_amp(self)
 
-        deployment = False
+        deployment = True
         if deployment:
             num_steps = [15, 25, 40]
             warmup_period = 20

@@ -469,7 +469,7 @@ def set_stairs_env_cfg_reset_base(cfg):
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
         # "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
-        "yaw": (-math.pi / 2, math.pi / 2),
+        "yaw": (-math.pi, math.pi),
     }
 
 
