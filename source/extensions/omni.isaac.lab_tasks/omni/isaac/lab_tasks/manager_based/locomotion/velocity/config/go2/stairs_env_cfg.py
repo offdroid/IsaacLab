@@ -27,7 +27,6 @@ from . import parameters
 @configclass
 class UnitreeGo2StairsEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
     def __post_init__(self):
-        # post init of parent
         super().__post_init__()
 
         self.terrain_type = "stairs"
@@ -42,129 +41,22 @@ class UnitreeGo2StairsEnvCfgSimpleReward(LocomotionVelocityRoughEnvCfg):
 @configclass
 class UnitreeGo2StairsEnvCfgSimpleReward_PLAY(UnitreeGo2StairsEnvCfgSimpleReward):
     def __post_init__(self):
-        # post init of parent
         super().__post_init__()
-
-        parameters.set_play_settings_flat(self)
-        parameters.set_play_settings_rough(self)
-
-
-#######################################################################
-# Stairs complex reward
+        raise NotImplementedError()
 
 
 @configclass
 class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
     def __post_init__(self):
-        # post init of parent
         super().__post_init__()
-
-        self.terrain_type = "shortstairs"
-        parameters.set_terrain(self)
-        parameters.set_rewards_complex(self)
-        parameters.set_curriculum(self, True)
-
-        self.episode_length_s = 8.0
-        self.scene.terrain.max_init_terrain_level = 0
-
-        # Random force pushes on body
-        self.events.push_robot.params["velocity_range"] = {
-            "x": (-1.0, 1.0),
-            "y": (-1.0, 1.0),
-            "z": (-0.01, 0.01),
-            "roll": (-0.1, 0.1),
-            "pitch": (-0.1, 0.1),
-            "yaw": (-0.1, 0.1),
-        }
-        self.events.push_robot.interval_range_s = (2.0, 6.0)
-        # Random feet pushes
-        # self.events.push_feet.params["velocity_range"] = {
-        #     "x": (-0.02, 0.02),
-        #     "y": (-0.02, 0.02),
-        # }
-        # self.events.push_feet.interval_range_s = (1.0, 3.0)
-        self.rewards.foot_clearance.weight = -5
-        self.rewards.feet_air_time.weight = 1
-
-        self.curriculum.terrain_levels.params[
-            "custom_required_distance_for_move_up"
-        ] = (((0.7 - 0.3) / 2 + 0.2) * 8 * 2 / 3)
-
-        self.rewards.dof_torques_l2.weight = -0.006 / 5
-        self.rewards.dof_acc_l2.weight = -2.5e-7 / 4
-        self.rewards.torque_limits.weight = -1.0e-5 / 4
-        self.rewards.dof_acc_l2.weight = -2.5e-7 / 5
-        self.rewards.action_rate_l2.weight = -0.01 / 15
-
-        num_steps = [0, 2, 8]
-        warmup_period = 10
-        data = {
-            "undesired_contacts_thigh": {
-                "order": 0,
-                "weight": -1 / 5,
-            },
-            "undesired_contacts_calf": {
-                "order": 0,
-                "weight": -1 / 5,
-            },
-            # "dof_torques_l2": {"order": 1, "weight": -0.006 / 8},
-            "dof_acc_l2": {"order": 1, "weight": -2.5e-7 / 5},
-            # "torque_limits": {"order": 1, "weight": -1.0e-5 / 4},
-            # "torque_limits_2": {"order": 1, "weight": -1.0e-5 / 4},
-            "feet_stumble": {"order": 0, "weight": -0.2},
-            "feet_slide": {"order": 2, "weight": -0.02},
-            "feet_air_time": {"order": 2, "weight": 20},
-            # "contact_forces": {"order": 2, "weight": -0.2},
-            "ang_vel_xy_l2": {"order": 1, "weight": -0.05},
-            "lin_vel_z_l2": {"order": 1, "weight": -0.01},
-            # "foot_clearance": {"order": 0, "weight": -1.0},
-            # "joint_deviation_l1_hip": {
-            #     "order": 1,
-            #     "weight": -0.5,
-            # },
-            # "joint_deviation_l1_calf_thigh": {
-            #     "order": 1,
-            #     "weight": -0.1,
-            # },
-            # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 / 10},
-            # "action_rate_l2": {"order": 2, "weight": -0.01 / 10},
-        }
-        for key, value in data.items():
-            setattr(
-                self.curriculum,
-                f"{key}_schedule",
-                CurriculumTermCfg(
-                    func=modify_reward_weight,
-                    params={
-                        "term_name": key,
-                        "weight": value["weight"],
-                        "initial_weight": getattr(self.rewards, key).weight,
-                        "num_steps": num_steps[value["order"]],
-                        "warmup_period": getattr(value, "warmup_period", warmup_period),
-                    },
-                ),
-            )
-
-        import math
-
-        self.events.reset_base.params["pose_range"] = {
-            "x": (-0.5, 0.5),
-            "y": (-0.9, 0.3),
-            "z": (-0.08, -0.08),
-            # "roll": (-math.radians(20), math.radians(20)),
-            # "pitch": (-math.radians(20), math.radians(20)),
-            "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
-        }
+        raise NotImplementedError()
 
 
 @configclass
 class UnitreeGo2StairsEnvCfgComplexReward_PLAY(UnitreeGo2StairsEnvCfgComplexReward):
     def __post_init__(self):
-        # post init of parent
         super().__post_init__()
-
-        parameters.set_play_settings_flat(self)
-        parameters.set_play_settings_rough(self)
+        raise NotImplementedError()
 
 
 #######################################################################
@@ -232,9 +124,11 @@ class modify_env_param(ManagerTermBase):
         if new_val is not self.NO_CHANGE:
             self._set_fn(new_val)
 
+
 """
 Helper functions.
 """
+
 
 def _process_accessors(
     self, root: ManagerBasedRLEnv, path: str
@@ -402,7 +296,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             warmup_period = 20
             # self.rewards.stand_still.weight = -5
             self.rewards.feet_contact_without_cmd.weight = 0.1
-            self.rewards.feet_air_time.weight = 100
+            # self.rewards.feet_air_time.weight = 100
             # self.rewards.feet_on_step.weight = 0
             self.rewards.ang_vel_xy_l2.weight = 0
             self.rewards.ang_vel_x_l2.weight = 0
@@ -429,11 +323,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                     "weight": 1500,
                     "warmup_period": 30,
                 },
-                "dof_torques_l2": {"order": 1, "weight": -0.006 * 3},
-                "torque_limits": {"order": 1, "weight": -35 * 1},
-                "torque_limits_2": {"order": 1, "weight": -100 * 1},
-                "feet_stumble": {"order": 1, "weight": -50},
-                "feet_slide": {"order": 1, "weight": -2.5},
+                "dof_torques_l2": {"order": 1, "weight": -0.006 * 2},
+                "torque_limits": {"order": 1, "weight": -35 / 2},
+                "torque_limits_2": {"order": 1, "weight": -100 / 2},
+                "feet_stumble": {"order": 1, "weight": -50 / 2},
+                "feet_slide": {"order": 1, "weight": -2.5 / 2},
                 # "joint_deviation_l1_hip": {
                 #     "order": 1,
                 #     "weight": -0.5,
@@ -444,7 +338,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 # },
                 "ang_vel_xy_l2": {
                     "order": 1,
-                    "weight": -10.0,
+                    "weight": -10.0 / 2,
                 },
                 # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 0.01},
                 # "action_rate_l2": {"order": 2, "weight": -0.01 * 0.05},
@@ -512,42 +406,6 @@ class AMPUnitreeGo2StairsEnvCfg_PLAY(AMPUnitreeGo2StairsEnvCfg):
 
 
 @configclass
-class AMPUnitreeGo2StairsAlignmentEnvCfg(AMPUnitreeGo2StairsEnvCfg):
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-
-        self.terrain_type = "stairs"
-        parameters.set_terrain(self)
-        parameters.set_curriculum(self, False)
-        self.scene.terrain.terrain_generator.sub_terrains[
-            "stairs"
-        ].step_height_range = (
-            0.0,
-            0.0,
-        )
-
-        self.rewards.feet_on_step.weight = 0
-        self.rewards.feet_on_step.params["distance_a"] = 0.01
-        self.rewards.feet_on_step.params["distance_b"] = 0.01
-        self.curriculum.feet_on_step_schedule = CurriculumTermCfg(
-            func=modify_reward_weight,
-            params={
-                "term_name": "feet_on_step",
-                "weight": 20,
-                "num_steps": 5,
-                "warmup_period": 5,
-                "initial_weight": self.rewards.feet_on_step.weight,
-            },
-        )
-
-        self.episode_length_s = 5.0
-
-        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_extendedWithoutReverse_feetZAmpl_minimal_feet_forward/*"
-        self.amp_motion_files = glob.glob(self.amp_motion_folder)
-
-
-@configclass
 class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
     def __post_init__(self):
         # post init of parent
@@ -583,71 +441,6 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
 
 @configclass
 class AMPUnitreeGo2ShortStairsEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-
-        parameters.set_play_settings_flat(self)
-        parameters.set_play_settings_rough(self)
-
-        self.amp_motion_folder = "datasets/dummy/*"  # required otherwise it wont start; it is recomended to use same motion files as used for training
-
-
-@configclass
-class AMPUnitreeGo2ShortStairsBasicEnvCfg(AMPUnitreeGo2StairsEnvCfg):
-    def __post_init__(self):
-        # post init of parent
-        super().__post_init__()
-
-        self.terrain_type = "shortstairs"
-        parameters.set_terrain(self)
-        parameters.set_rewards_simple(self)
-
-        from dataclasses import fields
-
-        for field in fields(self.curriculum):
-            if field.name == "terrain_levels":
-                continue
-            setattr(self.curriculum, field.name, None)
-
-        self.curriculum.feet_on_step_schedule = None
-        self.curriculum.joint_deviation_l1_schedule = None
-        self.curriculum.dof_acc_l2_schedule = None
-        self.curriculum.action_rate_l2_schedule = None
-        self.curriculum.dof_torques_l2_schedule = None
-        self.curriculum.torque_limits_schedule = None
-        self.curriculum.torque_limits_2_schedule = None
-        self.curriculum.feet_stumble_schedule = None
-        self.curriculum.feet_slide_schedule = None
-        self.curriculum.undesired_contacts_thigh_schedule = None
-        self.curriculum.undesired_contacts_calf_schedule = None
-
-        self.episode_length_s = 8.0
-
-        # Random force pushes on body
-        self.events.push_robot.params["velocity_range"] = {
-            "x": (-1.0, 1.0),
-            "y": (-1.0, 1.0),
-            "z": (-0.01, 0.01),
-            "roll": (-0.1, 0.1),
-            "pitch": (-0.1, 0.1),
-            "yaw": (-0.1, 0.1),
-        }
-        self.events.push_robot.interval_range_s = (2.0, 6.0)
-        # Random feet pushes
-        self.events.push_feet.params["velocity_range"] = {
-            "x": (-0.02, 0.02),
-            "y": (-0.02, 0.02),
-        }
-        self.events.push_feet.interval_range_s = (1.0, 3.0)
-
-        self.curriculum.terrain_levels.params[
-            "custom_required_distance_for_move_up"
-        ] = (((0.7 - 0.2) / 2 + 0.2) * 8 * 2 / 3)
-
-
-@configclass
-class AMPUnitreeGo2ShortStairsBasicEnvCfg_PLAY(AMPUnitreeGo2ShortStairsEnvCfg):
     def __post_init__(self):
         # post init of parent
         super().__post_init__()

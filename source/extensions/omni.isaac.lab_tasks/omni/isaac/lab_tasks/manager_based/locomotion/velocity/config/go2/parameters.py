@@ -161,9 +161,7 @@ def set_terrain(cfg):
         cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 5)
 
         for k in ["stairs", "stairs_rough"]:
-            cfg.scene.terrain.terrain_generator.sub_terrains[
-                k
-            ].platform_width_top = 5
+            cfg.scene.terrain.terrain_generator.sub_terrains[k].platform_width_top = 5
             cfg.scene.terrain.terrain_generator.sub_terrains[
                 k
             ].platform_width_bottom = 5
@@ -208,42 +206,6 @@ def set_rewards_simple(cfg):
     )
 
 
-def set_rewards_standing(cfg):
-    # disable rewards
-    for field in fields(cfg.rewards):
-        reward_obj = getattr(cfg.rewards, field.name)
-        reward_obj.weight = 0.0
-
-    cfg.rewards.head_height_l2.weight = 1.0
-    cfg.rewards.feet_height_l2.weight = 1.0
-
-    # Make robot stand still, i.e., avoid drift
-    cfg.commands.base_velocity.ranges.lin_vel_x = (0.0, 0.0)
-    cfg.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-    cfg.rewards.track_lin_vel_xy_exp.weight = 0.3
-
-
-def set_rewards_standing_amp(cfg):
-    # disable rewards
-    for field in fields(cfg.rewards):
-        reward_obj = getattr(cfg.rewards, field.name)
-        reward_obj.weight = 0.0
-
-    # cfg.rewards.base_height_l2.weight = 1.0
-    # cfg.rewards.head_height_l2.weight = 45.0
-    cfg.rewards.feet_height_l2.weight = 45.0
-
-    # Make robot stand still, i.e., avoid drift
-    cfg.commands.base_velocity.ranges.lin_vel_x = (0.0, 0.0)
-    cfg.commands.base_velocity.ranges.lin_vel_y = (0.0, 0.0)
-    cfg.rewards.track_lin_vel_xy_exp.weight = 20
-
-    cfg.rewards.dof_torques_l2.weight = -0.006  # -2.8
-    cfg.rewards.torque_limits.weight = -70  # -0.5
-    cfg.rewards.torque_limits_2.weight = -200  # -0.005
-    cfg.rewards.dof_acc_l2.weight = -5e-6
-
-
 def set_velocity_rewards_amp(cfg):
     # disable rewards
     for field in fields(cfg.rewards):
@@ -268,38 +230,6 @@ def set_velocity_rewards_amp(cfg):
     # cfg.rewards.dof_torques_l2.weight = -0.006
     # cfg.rewards.torque_limits.weight = -35
     # cfg.rewards.torque_limits_2.weight = -100
-    # cfg.rewards.dof_acc_l2.weight = -5e-6
-
-    # cfg.rewards.undesired_contacts_thigh.weight = -1.0
-    # cfg.rewards.undesired_contacts_calf.weight = -1.0
-    # cfg.rewards.contact_forces.weight = -1.0
-
-
-def set_box_rewards_amp(cfg):
-    # disable rewards
-    for field in fields(cfg.rewards):
-        reward_obj = getattr(cfg.rewards, field.name)
-        # we need to check this because some reward terms might have been deleted previously depending on the environment and task
-        if reward_obj is not None:
-            reward_obj.weight = 0.0
-
-    # set only task reward
-    cfg.rewards.track_lin_vel_xy_exp.weight = 60
-    cfg.rewards.track_lin_vel_xy_exp.params["std"] = 0.22
-    cfg.rewards.track_ang_vel_z_exp.weight = 20
-    cfg.rewards.track_lin_vel_xy_exp.params["std"] = (
-        0.22  # TODO should this be ang_vel?
-    )
-
-    assert False, "Rewards"
-    # cfg.rewards.feet_air_time.weight = (
-    #     100  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
-    # )
-    # # cfg.rewards.flat_orientation_l2.weight = -25
-    # cfg.rewards.feet_slide.weight = -5.0
-    cfg.rewards.dof_torques_l2.weight = -0.006
-    cfg.rewards.torque_limits.weight = -35
-    cfg.rewards.torque_limits_2.weight = -100
     # cfg.rewards.dof_acc_l2.weight = -5e-6
 
     # cfg.rewards.undesired_contacts_thigh.weight = -1.0
@@ -348,27 +278,6 @@ def set_rewards_complex(cfg):
     # TODO: desired base height
 
 
-def set_rewards_standing_complex(cfg):
-    # cfg.rewards.lin_vel_z_l2.weight = -2.0
-    # cfg.rewards.ang_vel_xy_l2.weight = -0.05
-    cfg.rewards.dof_torques_l2.weight = 0.1 * -0.0002
-    cfg.rewards.dof_acc_l2.weight = 0.02 * -2.5e-7  # do not use for ResRL
-    cfg.rewards.action_rate_l2.weight = 0.1 * -0.01
-    cfg.rewards.feet_air_time.weight = (
-        0.1
-        * 10  # consider reducing this to 7.5 if performance on task reward is bad; do not use for ResRL
-    )
-    # # cfg.rewards.undesired_contacts_thigh.weight = -1.0
-    # cfg.rewards.undesired_contacts_calf.weight = -1.0
-    cfg.rewards.contact_forces.weight = 0.1 * -1.0
-    # cfg.rewards.flat_orientation_l2.weight = -0.01
-    cfg.rewards.joint_pos_limits.weight = 0.1 * -10.0  # do not use for ResRL
-    cfg.rewards.torque_limits.weight = 0.1 * -1.0e-5
-    cfg.rewards.joint_deviation_l1.weight = (
-        0.1 * -0.25
-    )  # consider reducing this in case performance on task reward is bad
-
-
 def set_stairs_env_cfg_cmds(cfg):
     cfg.commands.base_velocity = mdp.Global3DUniformVelocityCommandCfg(
         # inherit parameters where possible
@@ -387,28 +296,6 @@ def set_stairs_env_cfg_cmds(cfg):
             heading=(
                 math.pi / 2 - math.radians(20),
                 math.pi / 2 + math.radians(20),
-            ),  # global heading "up the stairs" is in y direction, which is math.pi/2
-        ),
-    )
-
-
-def set_box_env_cfg_cmds(cfg):
-    cfg.commands.base_velocity = mdp.Global3DUniformVelocityCommandCfg(
-        # inherit parameters where possible
-        asset_name=cfg.commands.base_velocity.asset_name,
-        resampling_time_range=cfg.commands.base_velocity.resampling_time_range,
-        rel_standing_envs=cfg.commands.base_velocity.rel_standing_envs,
-        rel_heading_envs=cfg.commands.base_velocity.rel_heading_envs,
-        heading_command=cfg.commands.base_velocity.heading_command,
-        heading_control_stiffness=cfg.commands.base_velocity.heading_control_stiffness,
-        debug_vis=cfg.commands.base_velocity.debug_vis,
-        ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-0.1, 0.1),
-            lin_vel_y=(0.4, 0.8),
-            ang_vel_z=(0, 0),
-            heading=(
-                math.pi / 2,  # - math.radians(20),
-                math.pi / 2,  # + math.radians(20),
             ),  # global heading "up the stairs" is in y direction, which is math.pi/2
         ),
     )
@@ -466,22 +353,9 @@ def set_stairs_env_cfg_reset_base(cfg):
         "x": (-0.5, 0.5),
         "y": (-0.9, 0.3),
         "z": (-0.04, -0.04),
-        # "roll": (-math.radians(20), math.radians(20)),
-        # "pitch": (-math.radians(20), math.radians(20)),
-        # "yaw": (math.pi / 2 - math.radians(15), math.pi / 2 + math.radians(15)),
+        "roll": (-math.radians(20), math.radians(20)),
+        "pitch": (-math.radians(20), math.radians(20)),
         "yaw": (-math.pi, math.pi),
-    }
-
-
-def set_box_env_cfg_reset_base(cfg):
-    cfg.events.reset_base.params["pose_range"] = {
-        # "x": (-0.0, 0.0),
-        # "y": (0.04, 0.06),
-        # "yaw": (math.pi / 2, math.pi / 2),
-        "x": (-0.5, 0.5),
-        "y": (-0.25, 0.15),
-        "yaw": (math.pi / 2, math.pi / 2),
-        # "yaw": (math.pi / 2 - math.radians(20), math.pi / 2 + math.radians(20)),
     }
 
 
@@ -518,12 +392,6 @@ def add_stair_parameters_observation(cfg):
     )
 
 
-def add_box_parameters_observation(cfg):
-    cfg.observations.policy.box_parameters = ObsTerm(
-        func=mdp.box_parameters, noise=Unoise(n_min=-0.01, n_max=0.01)
-    )
-
-
 def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwargs):
     cfg.is_amp_env = True
 
@@ -549,6 +417,7 @@ def set_amp_settings(cfg, motion_folder="datasets/fromVision_motions_3/*", **kwa
 
 # NOTE this function keeps track of DR params that were used to train previous policies. Consider this function legacy. It should only be used if you know what you are doing.
 def previous_domain_randomization_params(cfg):
+    raise NotImplementedError()
     cfg.events.physics_material.params["static_friction_range"] = (0.6, 3.0)
     cfg.events.physics_material.params["dynamic_friction_range"] = (0.6, 1.2)
     cfg.events.physics_material.params["restitution_range"] = (0.0, 0.1)
@@ -573,6 +442,7 @@ def standing_domain_randomization(cfg):
 
 
 def disable_domain_randomization(cfg):
+    raise NotImplementedError()
     cfg.scene.robot.actuators["base_legs"].min_delay = 0
     cfg.scene.robot.actuators["base_legs"].max_delay = 0
     cfg.events.push_robot = None
@@ -613,6 +483,7 @@ def disable_domain_randomization(cfg):
 
 
 def zero_domain_randomization(cfg):
+    raise NotImplementedError()
     cfg.scene.robot.actuators["base_legs"].min_delay = 0
     cfg.scene.robot.actuators["base_legs"].max_delay = 0
     cfg.events.push_robot = None
@@ -651,29 +522,3 @@ def zero_domain_randomization(cfg):
     assert (
         not cfg.terrain_type == "flat_noisy"
     ), "flat_noisy is only for Domain Randomization."
-
-
-def set_standing_env_terminations(cfg):
-    cfg.terminations.bad_orientation = None
-    cfg.terminations.head_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={
-            "sensor_cfg": SceneEntityCfg(
-                "contact_forces", body_names=["Head_upper", "Head_lower"]
-            ),
-            "threshold": 1.0,
-        },
-    )
-    cfg.terminations.hip_contact = DoneTerm(
-        func=mdp.illegal_contact,
-        params={
-            "sensor_cfg": SceneEntityCfg(
-                "contact_forces", body_names=["FL_hip", "FR_hip", "RL_hip", "RR_hip"]
-            ),
-            "threshold": 1.0,
-        },
-    )
-    cfg.terminations.root_height = DoneTerm(
-        func=mdp.root_height_below_minimum,
-        params={"minimum_height": 0.15},
-    )
