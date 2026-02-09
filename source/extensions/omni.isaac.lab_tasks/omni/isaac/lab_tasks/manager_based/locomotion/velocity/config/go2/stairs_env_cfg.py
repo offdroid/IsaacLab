@@ -157,74 +157,74 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
         }
 
 
-    @configclass
-    class UnitreeGo2StairsEnvCfgComplexReward_PLAY(UnitreeGo2StairsEnvCfgComplexReward):
-        def __post_init__(self):
-            # post init of parent
-            super().__post_init__()
+@configclass
+class UnitreeGo2StairsEnvCfgComplexReward_PLAY(UnitreeGo2StairsEnvCfgComplexReward):
+    def __post_init__(self):
+        # post init of parent
+        super().__post_init__()
 
-            parameters.set_play_settings_flat(self)
-            parameters.set_play_settings_rough(self)
+        parameters.set_play_settings_flat(self)
+        parameters.set_play_settings_rough(self)
 
 
 #######################################################################
 # Stairs AMP
-    from typing import ClassVar
+from typing import ClassVar
 
 
-    class modify_env_param(ManagerTermBase):
-        NO_CHANGE: ClassVar = object()
-        """Special token to indicate no change in the value to be set.
+class modify_env_param(ManagerTermBase):
+    NO_CHANGE: ClassVar = object()
+    """Special token to indicate no change in the value to be set.
 
-        This token is used to signal that the `modify_fn` did not produce a new value. It can
-        be returned by the `modify_fn` to indicate that the current value should remain unchanged.
-        """
+    This token is used to signal that the `modify_fn` did not produce a new value. It can
+    be returned by the `modify_fn` to indicate that the current value should remain unchanged.
+    """
 
-        def __init__(self, cfg: CurriculumTermCfg, env: ManagerBasedRLEnv):
-            super().__init__(cfg, env)
-            # resolve term configuration
-            if "address" not in cfg.params:
-                raise ValueError(
-                    "The 'address' parameter must be specified in the curriculum term configuration."
-                )
+    def __init__(self, cfg: CurriculumTermCfg, env: ManagerBasedRLEnv):
+        super().__init__(cfg, env)
+        # resolve term configuration
+        if "address" not in cfg.params:
+            raise ValueError(
+                "The 'address' parameter must be specified in the curriculum term configuration."
+            )
 
-            # store current address
-            self._address: str = cfg.params["address"]
-            # store accessor functions
-            self._get_fn: callable = None
-            self._set_fn: callable = None
+        # store current address
+        self._address: str = cfg.params["address"]
+        # store accessor functions
+        self._get_fn: callable = None
+        self._set_fn: callable = None
 
-        def __del__(self):
-            """Destructor to clean up the compiled functions."""
-            # clear the getter and setter functions
-            self._get_fn = None
-            self._set_fn = None
-            self._container = None
-            self._last_path = None
+    def __del__(self):
+        """Destructor to clean up the compiled functions."""
+        # clear the getter and setter functions
+        self._get_fn = None
+        self._set_fn = None
+        self._container = None
+        self._last_path = None
 
-        """
-        Operations.
-        """
+    """
+    Operations.
+    """
 
-        def __call__(
-            self,
-            env: ManagerBasedRLEnv,
-            env_ids: Sequence[int],
-            address: str,
-            modify_fn: callable,
-            modify_params: dict | None = None,
-        ):
-            # fetch the getter and setter functions if not already compiled
-            if not self._get_fn:
-                self._get_fn, self._set_fn = self._process_accessors(
-                    self._env, self._address
-                )
+    def __call__(
+        self,
+        env: ManagerBasedRLEnv,
+        env_ids: Sequence[int],
+        address: str,
+        modify_fn: callable,
+        modify_params: dict | None = None,
+    ):
+        # fetch the getter and setter functions if not already compiled
+        if not self._get_fn:
+            self._get_fn, self._set_fn = self._process_accessors(
+                self._env, self._address
+            )
 
-            # resolve none type
-            modify_params = {} if modify_params is None else modify_params
+        # resolve none type
+        modify_params = {} if modify_params is None else modify_params
 
-            # get the current value of the target attribute
-            data = self._get_fn()
+        # get the current value of the target attribute
+        data = self._get_fn()
         # modify the value using the provided function
         new_val = modify_fn(self._env, env_ids, data, **modify_params)
         # set the modified value back to the target attribute
@@ -232,94 +232,94 @@ class UnitreeGo2StairsEnvCfgComplexReward(UnitreeGo2StairsEnvCfgSimpleReward):
         if new_val is not self.NO_CHANGE:
             self._set_fn(new_val)
 
+"""
+Helper functions.
+"""
+
+def _process_accessors(
+    self, root: ManagerBasedRLEnv, path: str
+) -> tuple[callable, callable]:
+    """Process and return the (getter, setter) functions for a dotted attribute path.
+
+    This function resolves a dotted path string to an attribute in the given root object.
+    The dotted path can include nested attributes, dictionary keys, and sequence indexing.
+
+    For instance, the path "foo.bar[2].baz" would resolve to `root.foo.bar[2].baz`. This
+    allows accessing attributes in a nested structure, such as a dictionary or a list.
+
+    Args:
+        root: The main object from which to resolve the attribute.
+        path: Dotted path string to the attribute variable. For e.g., "foo.bar[2].baz".
+
+    Returns:
+        A tuple of two functions (getter, setter), where:
+        the getter retrieves the current value of the attribute, and
+        the setter writes a new value back to the attribute.
     """
-    Helper functions.
-    """
+    import re
 
-    def _process_accessors(
-        self, root: ManagerBasedRLEnv, path: str
-    ) -> tuple[callable, callable]:
-        """Process and return the (getter, setter) functions for a dotted attribute path.
-
-        This function resolves a dotted path string to an attribute in the given root object.
-        The dotted path can include nested attributes, dictionary keys, and sequence indexing.
-
-        For instance, the path "foo.bar[2].baz" would resolve to `root.foo.bar[2].baz`. This
-        allows accessing attributes in a nested structure, such as a dictionary or a list.
-
-        Args:
-            root: The main object from which to resolve the attribute.
-            path: Dotted path string to the attribute variable. For e.g., "foo.bar[2].baz".
-
-        Returns:
-            A tuple of two functions (getter, setter), where:
-            the getter retrieves the current value of the attribute, and
-            the setter writes a new value back to the attribute.
-        """
-        import re
-
-        # Turn "a.b[2].c" into ["a", ("b", 2), "c"] and store in parts
-        path_parts: list[str | tuple[str, int]] = []
-        for part in path.split("."):
-            m = re.compile(r"^(\w+)\[(\d+)\]$").match(part)
-            if m:
-                path_parts.append((m.group(1), int(m.group(2))))
-            else:
-                path_parts.append(part)
-
-        # Traverse the parts to find the container
-        container = root
-        for container_path in path_parts[:-1]:
-            if isinstance(container_path, tuple):
-                # we are accessing a list element
-                name, idx = container_path
-                # find underlying attribute
-                if isinstance(container_path, dict):
-                    seq = container[name]  # type: ignore[assignment]
-                else:
-                    seq = getattr(container, name)
-                # save the container for the next iteration
-                container = seq[idx]
-            else:
-                # we are accessing a dictionary key or an attribute
-                if isinstance(container, dict):
-                    container = container[container_path]
-                else:
-                    container = getattr(container, container_path)
-
-        # save the container and the last part of the path
-        self._container = container
-        self._last_path = path_parts[
-            -1
-        ]  # for "a.b[2].c", this is "c", while for "a.b[2]" it is 2
-
-        # build the getter and setter
-        if isinstance(self._container, tuple):
-            get_value = lambda: self._container[self._last_path]  # noqa: E731
-
-            def set_value(val):
-                tuple_list = list(self._container)
-                tuple_list[self._last_path] = val
-                self._container = tuple(tuple_list)
-
-        elif isinstance(self._container, (list, dict)):
-            get_value = lambda: self._container[self._last_path]  # noqa: E731
-
-            def set_value(val):
-                self._container[self._last_path] = val
-
-        elif isinstance(self._container, object):
-            get_value = lambda: getattr(self._container, self._last_path)  # noqa: E731
-            set_value = lambda val: setattr(
-                self._container, self._last_path, val
-            )  # noqa: E731
+    # Turn "a.b[2].c" into ["a", ("b", 2), "c"] and store in parts
+    path_parts: list[str | tuple[str, int]] = []
+    for part in path.split("."):
+        m = re.compile(r"^(\w+)\[(\d+)\]$").match(part)
+        if m:
+            path_parts.append((m.group(1), int(m.group(2))))
         else:
-            raise TypeError(
-                f"Unable to build accessors for address '{path}'. Unknown type found for access variable:"
-                f" '{type(self._container)}'. Expected a list, dict, or object with attributes."
-            )
+            path_parts.append(part)
 
-        return get_value, set_value
+    # Traverse the parts to find the container
+    container = root
+    for container_path in path_parts[:-1]:
+        if isinstance(container_path, tuple):
+            # we are accessing a list element
+            name, idx = container_path
+            # find underlying attribute
+            if isinstance(container_path, dict):
+                seq = container[name]  # type: ignore[assignment]
+            else:
+                seq = getattr(container, name)
+            # save the container for the next iteration
+            container = seq[idx]
+        else:
+            # we are accessing a dictionary key or an attribute
+            if isinstance(container, dict):
+                container = container[container_path]
+            else:
+                container = getattr(container, container_path)
+
+    # save the container and the last part of the path
+    self._container = container
+    self._last_path = path_parts[
+        -1
+    ]  # for "a.b[2].c", this is "c", while for "a.b[2]" it is 2
+
+    # build the getter and setter
+    if isinstance(self._container, tuple):
+        get_value = lambda: self._container[self._last_path]  # noqa: E731
+
+        def set_value(val):
+            tuple_list = list(self._container)
+            tuple_list[self._last_path] = val
+            self._container = tuple(tuple_list)
+
+    elif isinstance(self._container, (list, dict)):
+        get_value = lambda: self._container[self._last_path]  # noqa: E731
+
+        def set_value(val):
+            self._container[self._last_path] = val
+
+    elif isinstance(self._container, object):
+        get_value = lambda: getattr(self._container, self._last_path)  # noqa: E731
+        set_value = lambda val: setattr(
+            self._container, self._last_path, val
+        )  # noqa: E731
+    else:
+        raise TypeError(
+            f"Unable to build accessors for address '{path}'. Unknown type found for access variable:"
+            f" '{type(self._container)}'. Expected a list, dict, or object with attributes."
+        )
+
+    return get_value, set_value
 
 
 class modify_reward_weight(ManagerTermBase):
