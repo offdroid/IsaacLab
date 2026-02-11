@@ -420,7 +420,7 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         self.terrain_type = "shortstairs"
         parameters.set_terrain(self)
 
-        self.episode_length_s = 1.0
+        self.episode_length_s = 8.0
 
         # Random force pushes on body
         self.events.push_robot.params["velocity_range"] = {
