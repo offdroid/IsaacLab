@@ -292,11 +292,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         deployment = True
         if deployment:
-            num_steps = [15, 25, 40]
-            warmup_period = 20
-            # self.rewards.stand_still.weight = -5
+            num_steps = [10, 15, 20]
+            warmup_period = 10
+            self.rewards.stand_still.weight = -5
             self.rewards.feet_contact_without_cmd.weight = 0.1
-            # self.rewards.feet_air_time.weight = 100
+            self.rewards.feet_air_time.weight = 0
             # self.rewards.feet_on_step.weight = 0
             self.rewards.ang_vel_xy_l2.weight = 0
             self.rewards.ang_vel_x_l2.weight = 0
@@ -310,6 +310,10 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 #     "order": 0,
                 #     "weight": -40,
                 # },
+                "feet_air_time": {
+                    "order": 1,
+                    "weight": 100,
+                },
                 "undesired_contacts_thigh": {
                     "order": 0,
                     "weight": -20 * 0.5,
@@ -326,8 +330,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                 "dof_torques_l2": {"order": 1, "weight": -0.006 * 2},
                 "torque_limits": {"order": 1, "weight": -35 / 2},
                 "torque_limits_2": {"order": 1, "weight": -100 / 2},
-                "feet_stumble": {"order": 1, "weight": -50 / 2},
-                "feet_slide": {"order": 1, "weight": -2.5 / 2},
+                "feet_stumble": {"order": 1, "weight": -50 / 4},
+                "feet_slide": {"order": 1, "weight": -2.5 / 4},
                 # "joint_deviation_l1_hip": {
                 #     "order": 1,
                 #     "weight": -0.5,
@@ -340,8 +344,8 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                     "order": 1,
                     "weight": -10.0 / 2,
                 },
-                # "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 0.01},
-                # "action_rate_l2": {"order": 2, "weight": -0.01 * 0.05},
+                "dof_acc_l2": {"order": 2, "weight": -2.5e-7 * 0.01},
+                "action_rate_l2": {"order": 2, "weight": -0.01 * 0.05},
             }
             for key, value in data.items():
                 setattr(
@@ -380,7 +384,9 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
 
         parameters.set_amp_settings(self, use_rsi=False)
         # update motion files
-        self.amp_motion_folder = "datasets/fromVision_motions_DepthCam_stairsv3fast_feetZAmpl_minimal_stairs2_slow/*"
+        self.amp_motion_folder = (
+            "datasets/fromVision_motions_DepthCam_stairsv3fast_feetZAmpl_minimal_slow/*"
+        )
         self.amp_motion_files = glob.glob(self.amp_motion_folder)
 
     def update_motion_files(self):
@@ -414,7 +420,7 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
         self.terrain_type = "shortstairs"
         parameters.set_terrain(self)
 
-        self.episode_length_s = 8.0
+        self.episode_length_s = 1.0
 
         # Random force pushes on body
         self.events.push_robot.params["velocity_range"] = {
