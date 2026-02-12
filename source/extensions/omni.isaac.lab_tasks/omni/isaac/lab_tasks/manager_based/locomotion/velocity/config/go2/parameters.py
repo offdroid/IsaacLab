@@ -128,7 +128,7 @@ def set_curriculum(cfg, enable: bool):
 
 
 def set_terrain(cfg):
-    use_height_scanner = True
+    use_height_scanner = False
 
     if cfg.terrain_type == "flat":
         # change terrain to flat
