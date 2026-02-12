@@ -44,8 +44,8 @@ def set_play_settings_flat(cfg):
 def set_play_settings_rough(cfg):
     # reduce the number of terrains to save memory
     if cfg.scene.terrain.terrain_generator is not None:
-        cfg.scene.terrain.terrain_generator.num_rows = 1
-        cfg.scene.terrain.terrain_generator.num_cols = 1
+        cfg.scene.terrain.terrain_generator.num_rows = 2
+        cfg.scene.terrain.terrain_generator.num_cols = 2
         cfg.scene.terrain.terrain_generator.curriculum = False
 
         # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_height_range = (
@@ -67,6 +67,8 @@ def set_curriculum(cfg, enable: bool):
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
         cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
         for k in ["stairs", "stairs_rough"]:
+            if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
+                continue
             cfg.scene.terrain.terrain_generator.sub_terrains[k].step_height_range = (
                 0.14,
                 0.20,
@@ -109,6 +111,8 @@ def set_curriculum(cfg, enable: bool):
         cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
 
         for k in ["stairs", "stairs_rough"]:
+            if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
+                continue
             cfg.scene.terrain.terrain_generator.sub_terrains[k].step_height_range = (
                 0.14,
                 0.20,
@@ -161,6 +165,8 @@ def set_terrain(cfg):
         cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 5)
 
         for k in ["stairs", "stairs_rough"]:
+            if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
+                continue
             cfg.scene.terrain.terrain_generator.sub_terrains[k].platform_width_top = 5
             cfg.scene.terrain.terrain_generator.sub_terrains[
                 k

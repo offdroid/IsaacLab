@@ -289,7 +289,7 @@ def stairs_terrain(
         terrain_params["step_height"],
     )
 
-    roughness = 0.03 * torch.rand([]) + 0.03
+    roughness = 0.04 * torch.rand([]) + 0.03
 
     # Add remaining y-space to top platform
     overflow = available_y_for_stairs - num_steps * step_width
@@ -427,21 +427,24 @@ def stairs_terrain(
         trimesh.transformations.translation_matrix(top_platform_center),
     )
     meshes_list.append(top_platform)
-    top_platform, _ = random_uniform_terrain(
-        difficulty=difficulty,
-        cfg=HfRandomUniformTerrainCfg(
-            size=(terrain_size[0], cfg.platform_width_top),
-            noise_range=(0.0, difficulty * roughness * torch.rand([])),
-            noise_step=0.01,
-            border_width=0.0,
-            offset=(
-                0,
-                cfg.border_width + cfg.platform_width_bottom + num_steps * step_width,
-                num_steps * step_height,
+    if cfg.rough_surface:
+        top_platform, _ = random_uniform_terrain(
+            difficulty=difficulty,
+            cfg=HfRandomUniformTerrainCfg(
+                size=(terrain_size[0], cfg.platform_width_top),
+                noise_range=(0.0, difficulty * roughness * torch.rand([])),
+                noise_step=0.01,
+                border_width=0.0,
+                offset=(
+                    0,
+                    cfg.border_width
+                    + cfg.platform_width_bottom
+                    + num_steps * step_width,
+                    num_steps * step_height,
+                ),
             ),
-        ),
-    )
-    meshes_list.append(top_platform[0])
+        )
+        meshes_list.append(top_platform[0])
 
     # Terrain origin is at the bottom plane shortly before the stairs start
     assert (
