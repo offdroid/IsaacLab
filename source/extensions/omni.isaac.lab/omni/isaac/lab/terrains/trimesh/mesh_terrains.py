@@ -289,7 +289,7 @@ def stairs_terrain(
         terrain_params["step_height"],
     )
 
-    roughness = 0.04 * torch.rand([]) + 0.03
+    roughness = 0.02 * torch.rand([]) + 0.05
 
     # Add remaining y-space to top platform
     overflow = available_y_for_stairs - num_steps * step_width

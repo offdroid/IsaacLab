@@ -65,7 +65,7 @@ def set_curriculum(cfg, enable: bool):
             print("[WARN] Curriculum Manager is disabled.")
 
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
-        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
+        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.5)
         for k in ["stairs", "stairs_rough"]:
             if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
                 continue
@@ -108,7 +108,7 @@ def set_curriculum(cfg, enable: bool):
             func=mdp.terrain_levels_stairs,
         )
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
-        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.0)
+        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.5)
 
         for k in ["stairs", "stairs_rough"]:
             if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
