@@ -15,6 +15,7 @@ from typing import Any, ClassVar
 
 from omni.isaac.version import get_version
 
+import omni.isaac.lab.utils.math as math_utils
 from omni.isaac.lab.managers import CommandManager, CurriculumManager, RewardManager, TerminationManager
 
 from .common import VecEnvStepReturn
@@ -273,6 +274,17 @@ class ManagerBasedRLEnv(ManagerBasedEnv, gym.Env):
         # joint_vel = self.dof_vel
         # z_pos = self.root_states[:, 2:3]
         # return torch.cat((joint_pos, foot_pos, base_lin_vel, base_ang_vel, joint_vel, z_pos), dim=-1)
+    
+    def get_yaw_observations(self):
+        # do not query from observation_manager as it applies noise transformations etc.
+        asset = self.scene["robot"]
+        # extract euler angles (in world frame)
+        roll, _, yaw = math_utils.euler_xyz_from_quat(asset.data.root_quat_w)
+        # normalize angle to [-pi, pi]
+        # roll = torch.atan2(torch.sin(roll), torch.cos(roll))
+        yaw -= math.pi / 2
+        yaw = torch.atan2(torch.sin(yaw), torch.cos(yaw))
+        return yaw
 
     def render(self, recompute: bool = False) -> np.ndarray | None:
         """Run rendering without stepping through the physics.

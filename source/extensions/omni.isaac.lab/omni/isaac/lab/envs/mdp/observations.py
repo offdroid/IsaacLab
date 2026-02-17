@@ -636,11 +636,21 @@ def yaw(
     asset_cfg: SceneEntityCfg = SceneEntityCfg("robot"),
 ) -> torch.Tensor:
     """Yaw in the asset's root frame."""
-    asset: RigidObject = env.scene[asset_cfg.name]
-    _, _, yaw = math_utils.euler_xyz_from_quat(asset.data.root_quat_w)
-    return torch.cat(
-        [torch.sin(yaw).unsqueeze(-1), torch.cos(yaw.unsqueeze(-1))], dim=1
-    )
+    # asset: RigidObject = env.scene[asset_cfg.name]
+    # _, _, yaw = math_utils.euler_xyz_from_quat(asset.data.root_quat_w)
+    # return torch.cat(
+    #     [torch.sin(yaw).unsqueeze(-1), torch.cos(yaw.unsqueeze(-1))], dim=1
+    # )
+
+    asset: Articulation = env.scene[asset_cfg.name]
+    # extract euler angles (in world frame)
+    roll, _, yaw = math_utils.euler_xyz_from_quat(asset.data.root_quat_w)
+    # normalize angle to [-pi, pi]
+    roll = torch.atan2(torch.sin(roll), torch.cos(roll))
+    yaw = torch.atan2(torch.sin(yaw), torch.cos(yaw))
+
+    return torch.cat([yaw.unsqueeze(-1)], dim=-1)
+
 
 
 def distance_to_stairs(
