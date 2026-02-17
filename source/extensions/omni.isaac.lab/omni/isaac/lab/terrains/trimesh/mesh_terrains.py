@@ -319,13 +319,18 @@ def stairs_terrain(
         -step_height / 2,  # Center at half height // ground level
     ]
 
-    if cfg.rough_surface:
+    if cfg.rough_surface or True:
+        if cfg.rough_surface:
+            m = difficulty * roughness * torch.rand([])
+        else:
+            m = torch.clamp(difficulty * 2 * roughness, 0.0, 0.05)
+
         bottom_platform, _ = random_uniform_terrain(
             difficulty=difficulty,
             cfg=HfRandomUniformTerrainCfg(
                 # proportion=bottom_platform_proportions,
                 size=(terrain_size[0], cfg.platform_width_bottom),
-                noise_range=(0.0, difficulty * roughness * torch.rand([])),
+                noise_range=(0.0, m),
                 noise_step=0.01,
                 border_width=0.0,
                 offset=(0, 0, 0),
@@ -427,12 +432,16 @@ def stairs_terrain(
         trimesh.transformations.translation_matrix(top_platform_center),
     )
     meshes_list.append(top_platform)
-    if cfg.rough_surface:
+    if cfg.rough_surface or True:
+        if cfg.rough_surface:
+            m = difficulty * roughness * torch.rand([])
+        else:
+            m = torch.clamp(difficulty * 2 * roughness, 0.0, 0.05)
         top_platform, _ = random_uniform_terrain(
             difficulty=difficulty,
             cfg=HfRandomUniformTerrainCfg(
                 size=(terrain_size[0], cfg.platform_width_top),
-                noise_range=(0.0, difficulty * roughness * torch.rand([])),
+                noise_range=(0.0, m),
                 noise_step=0.01,
                 border_width=0.0,
                 offset=(
