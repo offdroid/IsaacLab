@@ -424,18 +424,18 @@ class AMPUnitreeGo2ShortStairsEnvCfg(AMPUnitreeGo2StairsEnvCfg):
 
         # Random force pushes on body
         self.events.push_robot.params["velocity_range"] = {
-            "x": (-1.0, 1.0),
-            "y": (-1.0, 1.0),
-            "z": (-0.01, 0.01),
-            "roll": (-0.1, 0.1),
-            "pitch": (-0.1, 0.1),
-            "yaw": (-0.1, 0.1),
+            "x": (-1.5, 1.5),
+            "y": (-1.5, 1.5),
+            "z": (-0.02, 0.02),
+            "roll": (-0.2, 0.2),
+            "pitch": (-0.2, 0.2),
+            "yaw": (-0.2, 0.2),
         }
-        self.events.push_robot.interval_range_s = (1.0, 5.0)
+        self.events.push_robot.interval_range_s = (0.5, 3.0)
         # Random feet pushes
         self.events.push_feet.params["velocity_range"] = {
-            "x": (-0.04, 0.04),
-            "y": (-0.04, 0.04),
+            "x": (-0.1, 0.1),
+            "y": (-0.1, 0.1),
         }
         self.events.push_feet.interval_range_s = (1.0, 3.0)
 
