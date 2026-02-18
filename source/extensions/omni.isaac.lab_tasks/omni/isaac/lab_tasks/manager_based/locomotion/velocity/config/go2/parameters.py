@@ -65,7 +65,7 @@ def set_curriculum(cfg, enable: bool):
             print("[WARN] Curriculum Manager is disabled.")
 
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
-        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.5)
+        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.3)
         for k in ["stairs", "stairs_rough"]:
             if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
                 continue
@@ -108,7 +108,7 @@ def set_curriculum(cfg, enable: bool):
             func=mdp.terrain_levels_stairs,
         )
         assert "stairs" in cfg.scene.terrain.terrain_generator.sub_terrains
-        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.5)
+        cfg.scene.terrain.terrain_generator.difficulty_range = (0.0, 1.3)
 
         for k in ["stairs", "stairs_rough"]:
             if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
@@ -121,8 +121,8 @@ def set_curriculum(cfg, enable: bool):
                 "scaled_norm_widthprio"
             )
             cfg.scene.terrain.terrain_generator.sub_terrains[k].step_width = (
-                0.28,
-                0.32,
+                0.27,
+                0.33,
             )
         # cfg.scene.terrain.terrain_generator.sub_terrains["stairs"].step_width = 0.3
 
@@ -162,7 +162,7 @@ def set_terrain(cfg):
             cfg.observations.policy.height_scan = None
     elif cfg.terrain_type == "shortstairs":
         cfg.scene.terrain.terrain_generator = STAIRS_TERRAINS_CFG
-        cfg.scene.terrain.terrain_generator.size = (15.0, 10 + 5)
+        cfg.scene.terrain.terrain_generator.size = (10 + 5, 10.0)
 
         for k in ["stairs", "stairs_rough"]:
             if k not in cfg.scene.terrain.terrain_generator.sub_terrains:
@@ -173,7 +173,7 @@ def set_terrain(cfg):
             ].platform_width_bottom = 5
             cfg.scene.terrain.terrain_generator.sub_terrains[
                 k
-            ].y_coordinate_origin_relative_to_first_stair_step = -0.7
+            ].x_coordinate_origin_relative_to_first_stair_step = -0.7
             cfg.scene.terrain.terrain_generator.sub_terrains[k].num_steps_range = (
                 1,
                 6,
@@ -296,12 +296,12 @@ def set_stairs_env_cfg_cmds(cfg):
         heading_control_stiffness=cfg.commands.base_velocity.heading_control_stiffness,
         debug_vis=cfg.commands.base_velocity.debug_vis,
         ranges=mdp.UniformVelocityCommandCfg.Ranges(
-            lin_vel_x=(-0.1, 0.1),
-            lin_vel_y=(0.3, 0.7),
+            lin_vel_x=(0.3, 0.7),
+            lin_vel_y=(-0.1, 0.1),
             ang_vel_z=(0, 0),
             heading=(
-                math.pi / 2 - math.radians(20),
-                math.pi / 2 + math.radians(20),
+                math.radians(20),
+                math.radians(20),
             ),  # global heading "up the stairs" is in y direction, which is math.pi/2
         ),
     )
@@ -356,13 +356,13 @@ def set_stairs_env_cfg_cmds(cfg):
 
 def set_stairs_env_cfg_reset_base(cfg):
     cfg.events.reset_base.params["pose_range"] = {
-        "x": (-1, 1.0),
-        "y": (-1.5, 0.3),
+        "x": (-1.5, 0.3),
+        "y": (-3, 3),
         "z": (-0.04, -0.04),
         # "roll": (-math.radians(20), math.radians(20)),
         # "pitch": (-math.radians(20), math.radians(20)),
-        # "yaw": (math.pi / 2 - math.radians(90), math.pi / 2 + math.radians(90)),
-        "yaw": (-math.pi, math.pi),
+        # "yaw": (0, 0),
+        "yaw": (-math.pi * 2 / 5, math.pi * 2 / 5),
     }
 
 

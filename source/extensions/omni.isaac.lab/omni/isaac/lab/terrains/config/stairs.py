@@ -16,7 +16,7 @@ STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
     ),  # make it long enough to make sure robot doesn't fall down at end of platform (1ms * 20s = 20m)
     border_width=0.0,
     border_height=0.0,
-    num_rows=13,
+    num_rows=14,
     num_cols=20,
     horizontal_scale=0.1,  # not relevant, I think
     vertical_scale=0.005,  # not relevant, I think
@@ -26,14 +26,14 @@ STAIRS_TERRAINS_CFG = TerrainGeneratorCfg(
         "stairs": terrain_gen.MeshStairsTerrainCfg(
             step_height_range=(0.08, 0.16),  # demo was done for step height 0.14
             width_to_height_ratio=34 / 14,  # demo recorded for 34 / 14,
-            y_coordinate_origin_relative_to_first_stair_step=-1.5,
+            x_coordinate_origin_relative_to_first_stair_step=-1.5,
             mode="scaled_norm",
             rough_surface=False,
         ),
         "stairs_rough": terrain_gen.MeshStairsTerrainCfg(
             step_height_range=(0.08, 0.16),  # demo was done for step height 0.14
             width_to_height_ratio=34 / 14,  # demo recorded for 34 / 14,
-            y_coordinate_origin_relative_to_first_stair_step=-1.5,
+            x_coordinate_origin_relative_to_first_stair_step=-1.5,
             mode="scaled_norm",
             rough_surface=True,
         ),

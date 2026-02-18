@@ -461,19 +461,19 @@ def sparse_end_of_stairs_reward(
     step_width = env.scene.terrain.terrain_params["step_width"][rows, cols]
     num_steps = env.scene.terrain.terrain_params["num_steps"][rows, cols]
 
-    root_pos_y_absolute = asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
-    y_position_relative = (
-        root_pos_y_absolute
+    root_pos_x_absolute = asset.data.root_pos_w[:, 0] - env.scene.env_origins[:, 0]
+    x_position_relative = (
+        root_pos_x_absolute
         + env.cfg.scene.terrain.terrain_generator.sub_terrains[
             "stairs"
-        ].y_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
+        ].x_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
     )
 
     on_stairs = torch.logical_and(
-        y_position_relative >= 0.0,
-        y_position_relative - (num_steps + 0.5) * step_width <= 0,
+        x_position_relative >= 0.0,
+        x_position_relative - (num_steps + 0.5) * step_width <= 0,
     )
-    over_stairs = y_position_relative - num_steps * step_width >= 0.0
+    over_stairs = x_position_relative - num_steps * step_width >= 0.0
 
     # has_passed = over_stairs
     # is_first_pass = torch.logical_and(
@@ -489,7 +489,7 @@ def sparse_end_of_stairs_reward(
     # )
     # env.has_passed_target[is_first_pass] = 1
 
-    passed_step = (y_position_relative // step_width) * on_stairs
+    passed_step = (x_position_relative // step_width) * on_stairs
     higher_target_reached = torch.logical_and(
         passed_step > env.has_passed_target, on_stairs
     )

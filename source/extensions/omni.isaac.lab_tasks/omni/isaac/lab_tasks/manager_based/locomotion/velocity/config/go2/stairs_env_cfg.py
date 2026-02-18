@@ -300,7 +300,7 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
             # self.rewards.feet_on_step.weight = 0
             self.rewards.ang_vel_xy_l2.weight = 0
             self.rewards.ang_vel_x_l2.weight = 0
-            self.rewards.sparse_end_of_stairs.weight = 0
+            self.rewards.sparse_end_of_stairs.weight = 1500
 
             # self.rewards.feet_on_step.params["distance_a"] = 0.02
             # self.rewards.feet_on_step.params["distance_b"] = 0.02
@@ -322,11 +322,11 @@ class AMPUnitreeGo2StairsEnvCfg(LocomotionVelocityRoughEnvCfg):
                     "order": 0,
                     "weight": -20 * 0.5,
                 },
-                "sparse_end_of_stairs": {
-                    "order": 0,
-                    "weight": 1500,
-                    "warmup_period": 30,
-                },
+                # "sparse_end_of_stairs": {
+                #     "order": 0,
+                #     "weight": 1500,
+                #     "warmup_period": 30,
+                # },
                 "dof_torques_l2": {"order": 1, "weight": -0.006 * 2},
                 "torque_limits": {"order": 1, "weight": -35 / 2},
                 "torque_limits_2": {"order": 1, "weight": -100 / 2},

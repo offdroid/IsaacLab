@@ -94,16 +94,16 @@ def terrain_levels_stairs(
     step_width = env.scene.terrain.terrain_params["step_width"][rows, cols]
     num_steps = env.scene.terrain.terrain_params["num_steps"][rows, cols]
 
-    root_pos_y_absolute = asset.data.root_pos_w[:, 1] - env.scene.env_origins[:, 1]
-    y_position_relative = (
-        root_pos_y_absolute
+    root_pos_x_absolute = asset.data.root_pos_w[:, 0] - env.scene.env_origins[:, 0]
+    x_position_relative = (
+        root_pos_x_absolute
         + env.cfg.scene.terrain.terrain_generator.sub_terrains[
             "stairs"
-        ].y_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
+        ].x_coordinate_origin_relative_to_first_stair_step  # needs to be ADDED according to definition
     )
 
-    move_up = y_position_relative - num_steps * step_width >= 0.0
-    move_down = y_position_relative - num_steps * (1 / 3) * step_width < 0.0
+    move_up = x_position_relative - num_steps * step_width >= 0.0
+    move_down = x_position_relative - num_steps * (1 / 3) * step_width < 0.0
     move_up = move_up[env_ids]
     move_down = move_down[env_ids]
 

@@ -71,7 +71,7 @@ class MeshStairsTerrainCfg(SubTerrainBaseCfg):
     num_steps_range: tuple[int, int] | None = None
     """Number of steps to generate. Use this to limit the number of steps despite the environment length allowing for more stpes. The upper limit is clipped by the number of stairs that fit in the space."""
 
-    y_coordinate_origin_relative_to_first_stair_step: float = -0.5
+    x_coordinate_origin_relative_to_first_stair_step: float = -0.5
     """The coordinate origin of each sub_terrain relative to the start position of the first stair step. This values determines how far in front of the first stair step the robot spawns. Must be negative."""
 
     mode: str = "scaled_norm"
